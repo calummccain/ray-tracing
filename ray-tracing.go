@@ -32,12 +32,9 @@ type config struct {
 	Distance        float64
 	Angle           float64
 	Eta1            float64
-	Eta2A           float64
+	Eta2R           float64
+	Eta2G           float64
 	Eta2B           float64
-	Eta2C           float64
-	Eta2D           float64
-	Eta2E           float64
-	Eta2F           float64
 	NumberOfBounces int
 	RaysPerPixel    int
 }
@@ -219,7 +216,7 @@ func main() {
 
 				dir = vector.Sum3(vector.Sum3(oc, vector.Scale3(up, jFloat)), vector.Scale3(left, iFloat))
 
-				colour = resources.RayTrace(dir, camera, configData.Eta1, [6]float64{configData.Eta2A, configData.Eta2B, configData.Eta2C, configData.Eta2D, configData.Eta2E, configData.Eta2F}, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
+				colour = resources.RayTrace(dir, camera, configData.Eta1, [3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B}, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
 
 				r = colour[0]
 				g = colour[1]
