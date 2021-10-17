@@ -52,7 +52,7 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 			shiftedDir = vector.Normalise3(vector.Sum3(vector.Sum3(dir, vector.Scale3(up, hShift)), vector.Scale3(left, wShift)))
 
-			for j := 0; j < 3; j += 2 {
+			for j := 0; j < 3; j += 1 {
 
 				rays := [][]ray{
 					{
