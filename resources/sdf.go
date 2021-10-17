@@ -11,45 +11,46 @@ func Sdf(faces [][]FaceHyperbolic, p [3]float64) float64 {
 	//norm := Smin(vector.Norm3(vector.Diff3(p, [3]float64{0, 0, 0.75}))-1.0, vector.Norm3(vector.Diff3(p, [3]float64{0, 0, -0.75}))-1.0)
 
 	// ra := 1.0
-	// rb := 0.5
+	// rb := 0.2
 	// norm := vector.Norm2([2]float64{vector.Norm2([2]float64{p[1], p[2]}) - ra, p[0]}) - rb
 	// return norm
+	return math.Min(math.Min(vector.Norm3(vector.Diff3(p, [3]float64{2, 0, 0}))-0.5, vector.Norm3(vector.Diff3(p, [3]float64{-1.5, 0, 0}))-2), vector.Norm3(vector.Diff3(p, [3]float64{-9, 0, 0}))-4)
 
-	var val, val2 float64
+	// var val, val2 float64
 
-	norm := vector.Norm3(p) - 1.0
+	// norm := vector.Norm3(p) - 1.0
 
-	for i := 0; i < len(faces); i++ {
+	// for i := 0; i < len(faces); i++ {
 
-		val2 = norm
+	// 	val2 = norm
 
-		for j := 0; j < len(faces[i]); j++ {
+	// 	for j := 0; j < len(faces[i]); j++ {
 
-			if faces[i][j].InOut {
+	// 		if faces[i][j].InOut {
 
-				val2 = Smax(val2, faces[i][j].Radius-vector.Distance(p[:], faces[i][j].SphereCenter[:]))
+	// 			val2 = Smax(val2, faces[i][j].Radius-vector.Distance(p[:], faces[i][j].SphereCenter[:]))
 
-			} else {
+	// 		} else {
 
-				val2 = Smax(val2, vector.Distance(p[:], faces[i][j].SphereCenter[:])-faces[i][j].Radius)
+	// 			val2 = Smax(val2, vector.Distance(p[:], faces[i][j].SphereCenter[:])-faces[i][j].Radius)
 
-			}
+	// 		}
 
-		}
+	// 	}
 
-		if i == 0 {
+	// 	if i == 0 {
 
-			val = val2
+	// 		val = val2
 
-		} else {
+	// 	} else {
 
-			val = math.Min(val, val2)
+	// 		val = math.Min(val, val2)
 
-		}
+	// 	}
 
-	}
+	// }
 
-	return val
+	// return val
 
 	//return (Smax(math.Abs(p[0]+p[1])-p[2], math.Abs(p[0]-p[1])+p[2]) - 1.0) / math.Sqrt(3.0)
 
