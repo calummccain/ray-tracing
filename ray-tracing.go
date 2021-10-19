@@ -204,6 +204,15 @@ func main() {
 		invWidth := 1.0 / float64(width)
 		invHeight := 1.0 / float64(height)
 
+		numberOfRays := 0
+		numberOfMarches := 0
+		averageDepth := 0.0
+		hitPixels := 0
+
+		var numberOfRaysLocal int
+		var numberOfMarchesLocal int
+		var numberOfHitsLocal int
+
 		for i := 0; i < width; i++ {
 
 			fmt.Println(i)
@@ -216,7 +225,7 @@ func main() {
 
 				dir = vector.Sum3(vector.Sum3(oc, vector.Scale3(up, jFloat)), vector.Scale3(left, iFloat))
 
-				colour = resources.RayTrace(dir, camera, configData.Eta1, [3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B}, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
+				colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal = resources.RayTrace(dir, camera, configData.Eta1, [3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B}, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
 
 				r = colour[0]
 				g = colour[1]
@@ -236,9 +245,20 @@ func main() {
 
 				img.Set(i, j, col)
 
+				numberOfRays += numberOfRaysLocal
+				numberOfMarches += numberOfMarchesLocal
+				hitPixels += numberOfHitsLocal
+
 			}
 
 		}
+
+		averageDepth = float64(numberOfMarches-numberOfRays+hitPixels) / float64(hitPixels)
+
+		fmt.Println("Number of Rays: ", numberOfRays)
+		fmt.Println("Number of Marches: ", numberOfMarches)
+		fmt.Println("Number of hit Pixels: ", hitPixels)
+		fmt.Println("Average Depth of Ray : ", math.Log2(averageDepth))
 
 		f, _ := os.Create(fmt.Sprintf("images/png/data%d.png", time))
 		png.Encode(f, img)

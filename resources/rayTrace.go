@@ -16,22 +16,24 @@ type ray struct {
 	layer   int
 }
 
-func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) [3]float64 {
+func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int) {
 
 	pixelColor := [3]float64{0, 0, 0}
-
-	var shiftedDir [3]float64
+	numberOfRays := 0
+	numberOfMarches := 0
+	numberOfMisses := 0
 
 	var wShift, hShift float64
+	var shiftedDir [3]float64
 
-	var newPos [3]float64
-	var newRayPos [3]float64
-	var hit bool
-
-	var norm [3]float64
-
+	var rays [][]ray
 	var newRays []ray
 
+	var newPos [3]float64
+	var hit bool
+	var newRayPos [3]float64
+
+	var norm [3]float64
 	var schlick float64
 
 	var refractDir [3]float64
@@ -54,7 +56,9 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 			for j := 0; j < 3; j += 1 {
 
-				rays := [][]ray{
+				numberOfRays += 1
+
+				rays = [][]ray{
 					{
 						{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1},
 					},
@@ -68,6 +72,7 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 					for i := 0; i < len(rays[k]); i++ {
 
 						newPos, hit, _ = RayMarch(rays[k][i].pos, rays[k][i].dir, faces)
+						numberOfMarches += 1
 
 						if !hit {
 
@@ -78,6 +83,8 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 								pixelColor = vector.Sum3(pixelColor, vector.Scale3(colorOfDir(rays[k][i].dir, rays[k][i].pos, j), rays[k][i].weight))
 
 							} else {
+
+								numberOfMisses += 1
 
 								pixelColor = vector.Sum3(pixelColor, colorOfDir(rays[k][i].dir, rays[k][i].pos, j))
 
@@ -152,7 +159,9 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 	pixelColor = vector.Scale3(pixelColor, 1.0/float64(raysPerPixel*raysPerPixel))
 
-	return pixelColor
+	numberOfHits := 3*raysPerPixel*raysPerPixel - numberOfMisses
+
+	return pixelColor, numberOfRays, numberOfMarches, numberOfHits
 
 }
 
