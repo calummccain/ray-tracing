@@ -6,7 +6,7 @@ const (
 	CalcNormalEps              = 0.000001
 	generateEdgesHyperbolicEps = 0.000001
 	RayTraceShift              = 0.0001
-	FactorCutoff               = 0.0000001
+	FactorCutoff               = 0.001
 	MaxRayMarchDepth           = 2500
 	SmaxK                      = 0.01
 	SminK                      = 0.01
