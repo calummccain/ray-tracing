@@ -10,19 +10,19 @@ func Clamp(x, min, max float64) float64 {
 
 func Smax(a, b float64) float64 {
 
-	k := 0.01
+	k := SmaxK
 
-	ab := 0.5 + 0.5*(a-b)/k
-
-	if ab < 0 {
+	if a+k < b {
 
 		return b
 
-	} else if ab > 1 {
+	} else if b+k < a {
 
 		return a
 
 	} else {
+
+		ab := 0.5 + 0.5*(a-b)/k
 
 		return (1-ab)*b + ab*a + k*ab*(1-ab)
 
@@ -32,19 +32,19 @@ func Smax(a, b float64) float64 {
 
 func Smin(a, b float64) float64 {
 
-	k := 0.01
+	k := SminK
 
-	ab := 0.5 + 0.5*(a-b)/k
-
-	if ab < 0 {
+	if a+k < b {
 
 		return a
 
-	} else if ab > 1 {
+	} else if b+k < a {
 
 		return b
 
 	} else {
+
+		ab := 0.5 + 0.5*(a-b)/k
 
 		return ab*b + (1-ab)*a - k*ab*(1-ab)
 
