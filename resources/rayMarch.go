@@ -6,7 +6,7 @@ import (
 	"github.com/calummccain/coxeter/vector"
 )
 
-func RayMarch(pos, dir [3]float64, faces [][]FaceHyperbolic) ([3]float64, bool, float64) {
+func RayMarch(sdf func([3]float64) float64, pos, dir [3]float64) ([3]float64, bool, float64) {
 
 	var ip [3]float64
 	var temp float64
@@ -17,7 +17,7 @@ func RayMarch(pos, dir [3]float64, faces [][]FaceHyperbolic) ([3]float64, bool, 
 	for i := 0; i < NumberOfIterations; i++ {
 
 		ip = vector.Sum3(pos, vector.Scale3(dir, t))
-		temp = math.Abs(Sdf(faces, ip))
+		temp = math.Abs(sdf(ip))
 
 		if temp < RayMarchEps {
 

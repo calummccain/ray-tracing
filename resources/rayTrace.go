@@ -16,7 +16,7 @@ type ray struct {
 	layer   int
 }
 
-func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int, []int) {
+func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int, []int) {
 
 	pixelColor := [3]float64{0, 0, 0}
 	numberOfRays := 0
@@ -75,7 +75,7 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 					for i := 0; i < len(rays[k]); i++ {
 
-						newPos, hit, _ = RayMarch(rays[k][i].pos, rays[k][i].dir, faces)
+						newPos, hit, _ = RayMarch(sdf, rays[k][i].pos, rays[k][i].dir)
 						numberOfMarches += 1
 
 						if !hit {
@@ -84,7 +84,7 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 							if k > 0 {
 
-								norm = CalcNormal(faces, rays[k][i].pos)
+								norm = CalcNormal(sdf, rays[k][i].pos)
 
 								pixelColor = vector.Sum3(pixelColor, vector.Scale3(colorOfDir(rays[k][i].dir, rays[k][i].pos, j), rays[k][i].weight))
 
@@ -96,7 +96,7 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 						} else {
 
-							norm = CalcNormal(faces, newPos)
+							norm = CalcNormal(sdf, newPos)
 
 							schlick = Fresnel(rays[k][i].dir, norm, eta1, eta2[j])
 
