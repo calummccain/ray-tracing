@@ -19,8 +19,6 @@ func RayMarch(pos, dir [3]float64, faces [][]FaceHyperbolic) ([3]float64, bool, 
 		ip = vector.Sum3(pos, vector.Scale3(dir, t))
 		temp = math.Abs(Sdf(faces, ip))
 
-		//fmt.Println(temp, i, hit)
-
 		if temp < RayMarchEps {
 
 			hit = true
@@ -28,7 +26,7 @@ func RayMarch(pos, dir [3]float64, faces [][]FaceHyperbolic) ([3]float64, bool, 
 
 		}
 
-		if vector.NormSquared3(ip) > 120 {
+		if vector.NormSquared3(ip) > MaxRayMarchDepth {
 
 			break
 
@@ -37,8 +35,6 @@ func RayMarch(pos, dir [3]float64, faces [][]FaceHyperbolic) ([3]float64, bool, 
 		t += temp
 
 	}
-
-	//fmt.Println(t, hit)
 
 	return ip, hit, t
 }

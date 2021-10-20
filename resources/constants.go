@@ -7,4 +7,5 @@ const (
 	generateEdgesHyperbolicEps = 0.000001
 	RayTraceShift              = 0.0001
 	FactorCutoff               = 0.0000001
+	MaxRayMarchDepth           = 2500
 )
