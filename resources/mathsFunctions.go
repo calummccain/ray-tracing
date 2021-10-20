@@ -51,3 +51,17 @@ func Smin(a, b float64) float64 {
 	}
 
 }
+
+func SumInt(vec1, vec2 []int) []int {
+
+	d := make([]int, 0, len(vec1))
+
+	for i := 0; i < len(vec1); i++ {
+
+		d = append(d, vec1[i]+vec2[i])
+
+	}
+
+	return d
+
+}

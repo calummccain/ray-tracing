@@ -16,12 +16,12 @@ type ray struct {
 	layer   int
 }
 
-func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int) {
+func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int, []int) {
 
 	pixelColor := [3]float64{0, 0, 0}
 	numberOfRays := 0
 	numberOfMarches := 0
-	numberOfMisses := 0
+	depthStatistics := []int{0}
 
 	var wShift, hShift float64
 	var shiftedDir [3]float64
@@ -43,6 +43,10 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 	testReflect := true
 
 	shift := RayTraceShift
+
+	for l := 0; l < iterations; l++ {
+		depthStatistics = append(depthStatistics, 0)
+	}
 
 	for w := 0; w < raysPerPixel; w++ {
 
@@ -76,6 +80,8 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 						if !hit {
 
+							depthStatistics[k] += 1
+
 							if k > 0 {
 
 								norm = CalcNormal(faces, rays[k][i].pos)
@@ -83,8 +89,6 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 								pixelColor = vector.Sum3(pixelColor, vector.Scale3(colorOfDir(rays[k][i].dir, rays[k][i].pos, j), rays[k][i].weight))
 
 							} else {
-
-								numberOfMisses += 1
 
 								pixelColor = vector.Sum3(pixelColor, colorOfDir(rays[k][i].dir, rays[k][i].pos, j))
 
@@ -159,9 +163,9 @@ func RayTrace(dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int
 
 	pixelColor = vector.Scale3(pixelColor, 1.0/float64(raysPerPixel*raysPerPixel))
 
-	numberOfHits := 3*raysPerPixel*raysPerPixel - numberOfMisses
+	numberOfHits := 3*raysPerPixel*raysPerPixel - depthStatistics[0]
 
-	return pixelColor, numberOfRays, numberOfMarches, numberOfHits
+	return pixelColor, numberOfRays, numberOfMarches, numberOfHits, depthStatistics
 
 }
 
@@ -175,7 +179,7 @@ func colorOfDir(dir, pos [3]float64, j int) [3]float64 {
 
 	var newColor [3]float64
 
-	x := 10.0 + pos[0]
+	x := 20.0 + pos[0]
 	y := x * dir[1] / dir[0]
 	z := x * dir[2] / dir[0]
 
