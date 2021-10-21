@@ -16,7 +16,7 @@ type ray struct {
 	layer   int
 }
 
-func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]FaceHyperbolic, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int, []int) {
+func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, eta2 [3]float64, iterations int, faces [][]Face, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int) ([3]float64, int, int, int, []int) {
 
 	pixelColor := [3]float64{0, 0, 0}
 	numberOfRays := 0

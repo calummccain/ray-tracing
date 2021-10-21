@@ -7,31 +7,37 @@ import (
 	vector "github.com/calummccain/coxeter/vector"
 )
 
-func GenerateFacesEuclidean(numFaces int, faces [][]int, localVertices []VertexEuclidean) []FaceEuclidean {
+func GenerateFacesEuclidean(numFaces int, faces [][]int, localVertices []VertexEuclidean, cellCenter [4]float64) []Face {
 
-	var center4 [4]float64
 	var v1, v2, v3 [3]float64
-	var faceArray []FaceEuclidean
+	var faceArray []Face
+	var outside bool
+	var normal [3]float64
+
+	cellCenter3 := [3]float64{cellCenter[1], cellCenter[2], cellCenter[3]}
 
 	for i := 0; i < numFaces; i++ {
-
-		center4 = [4]float64{0, 0, 0, 0}
-
-		for j := 0; j < len(faces[i]); j++ {
-
-			center4 = vector.Sum4(center4, localVertices[faces[i][j]].V4)
-
-		}
-
-		center4 = vector.Scale4(center4, 1/vector.Norm4(center4))
 
 		v1 = localVertices[faces[i][0]].V3
 		v2 = localVertices[faces[i][1]].V3
 		v3 = localVertices[faces[i][2]].V3
 
-		faceArray = append(faceArray, FaceEuclidean{
-			D:      vector.Determinant3([3][3]float64{v1, v2, v3}),
-			Normal: vector.Cross3(vector.Diff3(v2, v1), vector.Diff3(v3, v1)),
+		outside = true
+		normal = vector.Normalise3(vector.Cross3(vector.Diff3(v2, v1), vector.Diff3(v3, v1)))
+
+		if vector.Dot3(normal, cellCenter3) < vector.Dot3(normal, v1) {
+
+			outside = false
+
+		}
+
+		faceArray = append(faceArray, Face{
+			Type:         "plane",
+			D:            vector.Dot3(normal, v1),
+			Normal:       normal,
+			Outside:      outside,
+			Radius:       0,
+			SphereCenter: [3]float64{0, 0, 0},
 		})
 
 	}
@@ -40,18 +46,18 @@ func GenerateFacesEuclidean(numFaces int, faces [][]int, localVertices []VertexE
 
 }
 
-func GenerateFacesHyperbolic(numFaces int, faces [][]int, localVertices []VertexHyperbolic, metric byte, vv float64, model string, cellCenter [4]float64) []FaceHyperbolic {
+func GenerateFacesHyperbolic(numFaces int, faces [][]int, localVertices []VertexHyperbolic, metric byte, vv float64, model string, cellCenter [4]float64) []Face {
 
 	eps := generateEdgesHyperbolicEps
 
 	var center4 [4]float64
 	var v1, v2, v3 [4]float64
 	var u1, u2, u3, centerModel [3]float64
-	var faceArray []FaceHyperbolic
+	var faceArray []Face
 	var sphereCenter [3]float64
 	var radius float64
 	var l int
-	var inOut bool
+	var outside bool
 	var cellCenter3 [3]float64
 
 	if model == "poincare" {
@@ -112,21 +118,21 @@ func GenerateFacesHyperbolic(numFaces int, faces [][]int, localVertices []Vertex
 
 			sphereCenter, radius = vector.Circum4(u1, u2, u3, centerModel)
 
-			inOut = true
+			outside = true
 
 			if vector.Distance(sphereCenter[:], cellCenter3[:]) < radius {
 
-				inOut = false
+				outside = false
 
 			}
 
-			faceArray = append(faceArray, FaceHyperbolic{
+			faceArray = append(faceArray, Face{
 				Type:         "sphere",
 				Radius:       radius,
 				SphereCenter: sphereCenter,
 				D:            0,
 				Normal:       [3]float64{0, 0, 0},
-				InOut:        inOut,
+				Outside:      outside,
 			})
 
 		} else {
@@ -145,21 +151,21 @@ func GenerateFacesHyperbolic(numFaces int, faces [][]int, localVertices []Vertex
 
 			}
 
-			inOut = true
+			outside = true
 
 			if vector.Dot3(vector.Cross3(vector.Diff3(u2, u1), vector.Diff3(u3, u1)), cellCenter3) > 0 {
 
-				inOut = false
+				outside = false
 
 			}
 
-			faceArray = append(faceArray, FaceHyperbolic{
+			faceArray = append(faceArray, Face{
 				Type:         "plane",
 				D:            vector.Determinant3([3][3]float64{u1, u2, u3}),
 				Normal:       vector.Normalise3(vector.Cross3(vector.Diff3(u2, u1), vector.Diff3(u3, u1))),
 				Radius:       0,
 				SphereCenter: [3]float64{0, 0, 0},
-				InOut:        inOut,
+				Outside:      outside,
 			})
 
 		}

@@ -49,6 +49,7 @@ type config struct {
 	CameraRotateX   float64
 	CameraRotateY   float64
 	CameraRotateZ   float64
+	Save            bool
 }
 
 func main() {
@@ -164,14 +165,31 @@ func main() {
 		}
 	}
 
-	var vertexData []resources.VertexHyperbolic
-	faceData := [][]resources.FaceHyperbolic{}
+	faceData := [][]resources.Face{}
 
-	for i := 0; i < len(cells); i++ {
+	if cellData.Metric == 's' {
 
-		vertexData = resources.GenerateVerticesHyperbolic(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
+	} else if cellData.Metric == 'e' {
 
-		faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+		var vertexData []resources.VertexEuclidean
+
+		for i := 0; i < len(cells); i++ {
+
+			vertexData = resources.GenerateVerticesEuclidean(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
+			faceData = append(faceData, resources.GenerateFacesEuclidean(cellData.NumFaces, cellData.Faces, vertexData, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+
+		}
+
+	} else {
+
+		var vertexData []resources.VertexHyperbolic
+
+		for i := 0; i < len(cells); i++ {
+
+			vertexData = resources.GenerateVerticesHyperbolic(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
+			faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+
+		}
 
 	}
 
@@ -195,9 +213,14 @@ func main() {
 		sdf = func(p [3]float64) float64 {
 			return resources.SdfSpheres(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ))
 		}
-	} else if configData.Sdf == "hyperbolic" {
+	} else if configData.Sdf == "seh" {
+
+		if cellData.Metric == 's' || cellData.Metric == 'e' {
+			configData.Model = ""
+		}
+
 		sdf = func(p [3]float64) float64 {
-			return resources.SdfHyperbolic(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), faceData)
+			return resources.Sdf(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), faceData, configData.Model)
 		}
 	}
 
@@ -205,7 +228,7 @@ func main() {
 
 		camera = resources.RotateXYZ([3]float64{configData.Distance, 0, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
 		origin = [3]float64{0, 0, 0}
-		up = resources.RotateXYZ([3]float64{0, 1, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
+		up = resources.RotateXYZ([3]float64{0, 0, 1}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
 
 		oc = vector.Normalise3(vector.Diff3(origin, camera))
 		left = vector.Cross3(oc, up)
@@ -279,30 +302,41 @@ func main() {
 		fmt.Println("Number of hit Pixels: ", hitPixels)
 		fmt.Println("Average Depth of Ray : ", math.Log2(averageDepth))
 		fmt.Println("Depth Statistics: ", depthStatistics)
-		fmt.Println("Number of Faces: ", len(faceData))
+		fmt.Println("Number of Faces: ", len(faceData[0]))
 
-		f, _ := os.Create(fmt.Sprintf("images/png/%d.png", timeString))
+		f, _ := os.Create("images/test.png")
 		png.Encode(f, img)
 
+		if configData.Save {
+
+			f, _ := os.Create(fmt.Sprintf("images/png/%d.png", timeString))
+			png.Encode(f, img)
+
+		}
+
 	}
 
-	origJson, err := os.Open("config.json")
-	if err != nil {
-		fmt.Println(err)
+	if configData.Save {
+
+		origJson, err := os.Open("config.json")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		copyJson, err := os.Create(fmt.Sprintf("images/data/%d.json", timeString))
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		_, err = io.Copy(copyJson, origJson)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		copyJson.Close()
+
+		origJson.Close()
+
 	}
-
-	copyJson, err := os.Create(fmt.Sprintf("images/data/%d.json", timeString))
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	_, err = io.Copy(copyJson, origJson)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	copyJson.Close()
-
-	origJson.Close()
 
 }

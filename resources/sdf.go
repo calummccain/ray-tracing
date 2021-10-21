@@ -13,12 +13,22 @@ func SdfTorus(p [3]float64, ra, rb float64) float64 {
 
 }
 
-// Signed distance function of a hyperbolic cell
-func SdfHyperbolic(p [3]float64, faces [][]FaceHyperbolic) float64 {
+// Signed distance function of a spherical/euclidean/hyperbolic cell
+func Sdf(p [3]float64, faces [][]Face, flag string) float64 {
 
 	var val, val2 float64
 
-	norm := vector.Norm3(p) - 1.0
+	var norm float64
+
+	if flag == "poincare" {
+
+		norm = vector.Norm3(p) - 1.0
+
+	} else {
+
+		norm = 100.0
+
+	}
 
 	for i := 0; i < len(faces); i++ {
 
@@ -26,7 +36,7 @@ func SdfHyperbolic(p [3]float64, faces [][]FaceHyperbolic) float64 {
 
 		for j := 0; j < len(faces[i]); j++ {
 
-			if faces[i][j].InOut {
+			if faces[i][j].Outside {
 
 				if faces[i][j].Type == "sphere" {
 
