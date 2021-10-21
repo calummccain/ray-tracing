@@ -6,17 +6,15 @@ import (
 	"github.com/calummccain/coxeter/vector"
 )
 
+// Signed distance function of a torus with radii ra and rb
 func SdfTorus(p [3]float64, ra, rb float64) float64 {
 
 	return vector.Norm2([2]float64{vector.Norm2([2]float64{p[1], p[2]}) - ra, p[0]}) - rb
 
 }
 
+// Signed distance function of a hyperbolic cell
 func SdfHyperbolic(p [3]float64, faces [][]FaceHyperbolic) float64 {
-
-	//norm := Smin(vector.Norm3(vector.Diff3(p, [3]float64{0, 0, 0.75}))-1.0, vector.Norm3(vector.Diff3(p, [3]float64{0, 0, -0.75}))-1.0)
-
-	//return math.Min(math.Min(vector.Norm3(vector.Diff3(p, [3]float64{2, 0, 0}))-1.0, vector.Norm3(vector.Diff3(p, [3]float64{-2, 0, 0}))-2.0), vector.Norm3(vector.Diff3(p, [3]float64{-9, 0, 0}))-4.0)
 
 	var val, val2 float64
 
@@ -30,11 +28,27 @@ func SdfHyperbolic(p [3]float64, faces [][]FaceHyperbolic) float64 {
 
 			if faces[i][j].InOut {
 
-				val2 = Smax(val2, faces[i][j].Radius-vector.Distance(p[:], faces[i][j].SphereCenter[:]))
+				if faces[i][j].Type == "sphere" {
+
+					val2 = Smax(val2, faces[i][j].Radius-vector.Distance(p[:], faces[i][j].SphereCenter[:]))
+
+				} else {
+
+					val2 = Smax(val2, faces[i][j].D-vector.Dot3(p, faces[i][j].Normal))
+
+				}
 
 			} else {
 
-				val2 = Smax(val2, vector.Distance(p[:], faces[i][j].SphereCenter[:])-faces[i][j].Radius)
+				if faces[i][j].Type == "sphere" {
+
+					val2 = Smax(val2, vector.Distance(p[:], faces[i][j].SphereCenter[:])-faces[i][j].Radius)
+
+				} else {
+
+					val2 = Smax(val2, -faces[i][j].D+vector.Dot3(p, faces[i][j].Normal))
+
+				}
 
 			}
 
@@ -56,19 +70,21 @@ func SdfHyperbolic(p [3]float64, faces [][]FaceHyperbolic) float64 {
 
 }
 
+// Signed distance function of a cuboid of lengths 2a, 2b, 2c
 func SdfCube(p [3]float64, a, b, c float64) float64 {
 
 	return Smax(math.Abs(p[0])-a, Smax(math.Abs(p[1])-b, math.Abs(p[2])-c))
 
-	//return vector.Norm3(p) - 1
 }
 
+// Signed distance function of a sphere of radius r
 func SdfSphere(p [3]float64, r float64) float64 {
 
 	return vector.Norm3(p) - r
 
 }
 
+// signed distance function of a row of spheres
 func SdfSpheres(p [3]float64) float64 {
 
 	return math.Min(math.Min(vector.Norm3(vector.Diff3(p, [3]float64{2, 0, 0}))-1.0, vector.Norm3(vector.Diff3(p, [3]float64{-2, 0, 0}))-2.0), vector.Norm3(vector.Diff3(p, [3]float64{-9, 0, 0}))-4.0)

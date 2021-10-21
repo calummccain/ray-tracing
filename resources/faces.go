@@ -156,7 +156,7 @@ func GenerateFacesHyperbolic(numFaces int, faces [][]int, localVertices []Vertex
 			faceArray = append(faceArray, FaceHyperbolic{
 				Type:         "plane",
 				D:            vector.Determinant3([3][3]float64{u1, u2, u3}),
-				Normal:       vector.Cross3(vector.Diff3(u2, u1), vector.Diff3(u3, u1)),
+				Normal:       vector.Normalise3(vector.Cross3(vector.Diff3(u2, u1), vector.Diff3(u3, u1))),
 				Radius:       0,
 				SphereCenter: [3]float64{0, 0, 0},
 				InOut:        inOut,

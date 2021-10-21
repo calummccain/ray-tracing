@@ -158,6 +158,7 @@ func main() {
 			cellData = data.IcosahedronData(configData.R)
 		case [2]int{3, 6}:
 			cellData = data.TriangularData(configData.R, configData.NumberOfFaces)
+			cellData.C = [4]float64{1, -4, 0, 0}
 		case [2]int{4, 3}:
 			cellData = data.HexahedronData(configData.R)
 		case [2]int{4, 4}:
@@ -178,7 +179,7 @@ func main() {
 
 		vertexData = resources.GenerateVerticesHyperbolic(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
 
-		faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, "poincare", cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+		faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
 
 	}
 
