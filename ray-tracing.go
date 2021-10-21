@@ -31,7 +31,6 @@ type config struct {
 	Model           string
 	NumberOfFaces   int
 	Distance        float64
-	Angle           float64
 	Eta1            float64
 	Eta2R           float64
 	Eta2G           float64
@@ -47,9 +46,14 @@ type config struct {
 	ObjectRotateX   float64
 	ObjectRotateY   float64
 	ObjectRotateZ   float64
+	CameraRotateX   float64
+	CameraRotateY   float64
+	CameraRotateZ   float64
 }
 
 func main() {
+
+	timeString := time.Now().Unix()
 
 	configJson, err := os.Open("config.json")
 	if err != nil {
@@ -78,25 +82,13 @@ func main() {
 
 	var col color.Color
 	var r, g, b, a float64
-	// Variables for the camera
-	//
-	//
-	//
-	//
-	//
-	//
-	//
-	//
-	//
+
 	var camera [3]float64
 	var origin [3]float64
 	var up [3]float64
 	var oc [3]float64
 	var left [3]float64
 
-	// Variables for animation
-	//  - angle: angle of rotation
-	var angle float64
 	var dir [3]float64
 	var colour [3]float64
 
@@ -211,29 +203,9 @@ func main() {
 
 	for time := start; time < end; time++ {
 
-		angle = configData.Angle
-
-		camera = [3]float64{configData.Distance * math.Cos(angle),
-			configData.Distance * math.Sin(angle) * data.Rt_2,
-			configData.Distance * math.Sin(angle) * data.Rt_2,
-		}
+		camera = resources.RotateXYZ([3]float64{configData.Distance, 0, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
 		origin = [3]float64{0, 0, 0}
-		up = [3]float64{
-			0,
-			-math.Sin(angle),
-			math.Cos(angle),
-		}
-
-		// camera = [3]float64{configData.Distance * math.Cos(angle),
-		// 	configData.Distance * math.Sin(angle),
-		// 	0,
-		// }
-		// origin = [3]float64{0, 0, 0}
-		// up = [3]float64{
-		// 	0,
-		// 	0,
-		// 	1,
-		// }
+		up = resources.RotateXYZ([3]float64{0, 1, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
 
 		oc = vector.Normalise3(vector.Diff3(origin, camera))
 		left = vector.Cross3(oc, up)
@@ -258,7 +230,8 @@ func main() {
 
 		for i := 0; i < width; i++ {
 
-			fmt.Println(i)
+			fmt.Print("\033[K\r")
+			fmt.Print(i)
 
 			iFloat = float64(i)*invWidth - 0.5*(1-invWidth)
 
@@ -297,6 +270,8 @@ func main() {
 
 		}
 
+		fmt.Print("\033[K\r")
+
 		averageDepth = float64(numberOfMarches-numberOfRays+hitPixels) / float64(hitPixels)
 
 		fmt.Println("Number of Rays: ", numberOfRays)
@@ -304,23 +279,19 @@ func main() {
 		fmt.Println("Number of hit Pixels: ", hitPixels)
 		fmt.Println("Average Depth of Ray : ", math.Log2(averageDepth))
 		fmt.Println("Depth Statistics: ", depthStatistics)
+		fmt.Println("Number of Faces: ", len(faceData))
 
-		f, _ := os.Create(fmt.Sprintf("images/png/data%d.png", time))
+		f, _ := os.Create(fmt.Sprintf("images/png/%d.png", timeString))
 		png.Encode(f, img)
-
-		fmt.Println(time)
 
 	}
 
-	timeString := time.Now().Format("01-02-2006 15:04:05")
-
-	// Read from the config file to determine properties for the gif
 	origJson, err := os.Open("config.json")
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	copyJson, err := os.Create("images/data/" + timeString + ".json")
+	copyJson, err := os.Create(fmt.Sprintf("images/data/%d.json", timeString))
 	if err != nil {
 		fmt.Println(err)
 	}

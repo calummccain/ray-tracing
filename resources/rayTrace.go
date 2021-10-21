@@ -48,13 +48,15 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 		depthStatistics = append(depthStatistics, 0)
 	}
 
+	invRaysPerPixelFloat64 := 1.0 / float64(raysPerPixel)
+
 	for w := 0; w < raysPerPixel; w++ {
 
-		wShift = (float64(w) - float64(raysPerPixel-1)*0.5) * invWidth / float64(raysPerPixel)
+		wShift = (float64(w) - float64(raysPerPixel-1)*0.5) * invWidth * invRaysPerPixelFloat64
 
 		for h := 0; h < raysPerPixel; h++ {
 
-			hShift = (float64(h) - float64(raysPerPixel-1)*0.5) * invHeight / float64(raysPerPixel)
+			hShift = (float64(h) - float64(raysPerPixel-1)*0.5) * invHeight * invRaysPerPixelFloat64
 
 			shiftedDir = vector.Normalise3(vector.Sum3(vector.Sum3(dir, vector.Scale3(up, hShift)), vector.Scale3(left, wShift)))
 
