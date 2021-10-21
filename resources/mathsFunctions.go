@@ -92,3 +92,9 @@ func RotateZ(p [3]float64, theta float64) [3]float64 {
 	return [3]float64{c*p[0] - s*p[1], s*p[0] + c*p[1], p[2]}
 
 }
+
+func RotateXYZ(p [3]float64, thetaX, thetaY, thetaZ float64) [3]float64 {
+
+	return RotateX(RotateY(RotateZ(p, thetaZ), thetaY), thetaX)
+
+}

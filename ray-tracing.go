@@ -44,6 +44,9 @@ type config struct {
 	CubeC           float64
 	TorusA          float64
 	TorusB          float64
+	ObjectRotateX   float64
+	ObjectRotateY   float64
+	ObjectRotateZ   float64
 }
 
 func main() {
@@ -184,22 +187,24 @@ func main() {
 	var sdf sdfFunction
 
 	if configData.Sdf == "sphere" {
-		sdf = func(p [3]float64) float64 { return resources.SdfSphere(p, configData.SphereRadius) }
+		sdf = func(p [3]float64) float64 {
+			return resources.SdfSphere(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), configData.SphereRadius)
+		}
 	} else if configData.Sdf == "cube" {
 		sdf = func(p [3]float64) float64 {
-			return resources.SdfCube(p, configData.CubeA, configData.CubeB, configData.CubeC)
+			return resources.SdfCube(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), configData.CubeA, configData.CubeB, configData.CubeC)
 		}
 	} else if configData.Sdf == "torus" {
 		sdf = func(p [3]float64) float64 {
-			return resources.SdfTorus(p, configData.TorusA, configData.TorusB)
+			return resources.SdfTorus(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), configData.TorusA, configData.TorusB)
 		}
 	} else if configData.Sdf == "spheres" {
 		sdf = func(p [3]float64) float64 {
-			return resources.SdfSpheres(p)
+			return resources.SdfSpheres(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ))
 		}
 	} else if configData.Sdf == "hyperbolic" {
 		sdf = func(p [3]float64) float64 {
-			return resources.SdfHyperbolic(p, faceData)
+			return resources.SdfHyperbolic(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), faceData)
 		}
 	}
 
