@@ -65,3 +65,30 @@ func SumInt(vec1, vec2 []int) []int {
 	return d
 
 }
+
+func RotateX(p [3]float64, theta float64) [3]float64 {
+
+	c := math.Cos(theta)
+	s := math.Sin(theta)
+
+	return [3]float64{p[0], c*p[1] - s*p[2], s*p[1] + c*p[2]}
+
+}
+
+func RotateY(p [3]float64, theta float64) [3]float64 {
+
+	c := math.Cos(theta)
+	s := math.Sin(theta)
+
+	return [3]float64{c*p[0] - s*p[2], p[1], s*p[0] + c*p[2]}
+
+}
+
+func RotateZ(p [3]float64, theta float64) [3]float64 {
+
+	c := math.Cos(theta)
+	s := math.Sin(theta)
+
+	return [3]float64{c*p[0] - s*p[1], s*p[0] + c*p[1], p[2]}
+
+}
