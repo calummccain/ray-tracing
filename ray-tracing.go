@@ -202,9 +202,6 @@ func main() {
 
 	}
 
-	fmt.Println(cellData)
-	fmt.Println(faceData)
-
 	type sdfFunction func([3]float64) float64
 
 	var sdf sdfFunction
