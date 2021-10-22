@@ -1,11 +1,93 @@
 package resources
 
 import (
+	"fmt"
 	"math"
 
 	hyperbolic "github.com/calummccain/coxeter/hyperbolic"
+	"github.com/calummccain/coxeter/spherical"
 	vector "github.com/calummccain/coxeter/vector"
 )
+
+func GenerateFacesSpherical(numFaces int, faces [][]int, localVertices []VertexSpherical, cellCenter [4]float64) []Face {
+
+	eps := GenerateFacesSphericalEps
+
+	var center3 [3]float64
+	var center4 [4]float64
+	var v1, v2, v3 [3]float64
+	var faceArray []Face
+	var sphereCenter [3]float64
+	var radius float64
+	var outside bool
+
+	cellCenter3 := spherical.HyperToStereo(cellCenter)
+
+	fmt.Println("cellCenter3 ", cellCenter3)
+
+	for i := 0; i < numFaces; i++ {
+
+		center4 = [4]float64{0, 0, 0, 0}
+
+		for j := 0; j < len(faces[i]); j++ {
+
+			center4 = vector.Sum4(center4, localVertices[faces[i][j]].V4)
+
+		}
+
+		center3 = spherical.HyperToStereo(center4)
+
+		v1 = localVertices[faces[i][0]].V3
+		v2 = localVertices[faces[i][1]].V3
+		v3 = localVertices[faces[i][2]].V3
+
+		if math.Abs(vector.Determinant3([3][3]float64{vector.Diff3(v1, center3), vector.Diff3(v2, center3), vector.Diff3(v3, center3)})) > eps {
+
+			sphereCenter, radius = vector.Circum4(v1, v2, v3, center3)
+
+			outside = true
+
+			if vector.Distance(sphereCenter[:], cellCenter3[:]) < radius {
+
+				outside = false
+
+			}
+
+			faceArray = append(faceArray, Face{
+				Type:         "sphere",
+				D:            vector.Determinant3([3][3]float64{v1, v2, v3}),
+				Normal:       vector.Cross3(vector.Diff3(v2, v1), vector.Diff3(v3, v1)),
+				Radius:       radius,
+				SphereCenter: sphereCenter,
+				Outside:      outside,
+			})
+
+		} else {
+
+			outside = true
+
+			if vector.Dot3(vector.Cross3(vector.Diff3(v2, v1), vector.Diff3(v3, v1)), cellCenter3) > 0 {
+
+				outside = false
+
+			}
+
+			faceArray = append(faceArray, Face{
+				Type:         "plane",
+				D:            vector.Determinant3([3][3]float64{v1, v2, v3}),
+				Normal:       vector.Normalise3(vector.Cross3(vector.Diff3(v2, v1), vector.Diff3(v3, v1))),
+				Radius:       0,
+				SphereCenter: [3]float64{0, 0, 0},
+				Outside:      outside,
+			})
+
+		}
+
+	}
+
+	return faceArray
+
+}
 
 func GenerateFacesEuclidean(numFaces int, faces [][]int, localVertices []VertexEuclidean, cellCenter [4]float64) []Face {
 
@@ -48,7 +130,7 @@ func GenerateFacesEuclidean(numFaces int, faces [][]int, localVertices []VertexE
 
 func GenerateFacesHyperbolic(numFaces int, faces [][]int, localVertices []VertexHyperbolic, metric byte, vv float64, model string, cellCenter [4]float64) []Face {
 
-	eps := generateEdgesHyperbolicEps
+	eps := GenerateFacesHyperbolicEps
 
 	var center4 [4]float64
 	var v1, v2, v3 [4]float64

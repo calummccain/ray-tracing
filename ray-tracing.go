@@ -169,6 +169,15 @@ func main() {
 
 	if cellData.Metric == 's' {
 
+		var vertexData []resources.VertexSpherical
+
+		for i := 0; i < len(cells); i++ {
+
+			vertexData = resources.GenerateVerticesSpherical(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
+			faceData = append(faceData, resources.GenerateFacesSpherical(cellData.NumFaces, cellData.Faces, vertexData, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+
+		}
+
 	} else if cellData.Metric == 'e' {
 
 		var vertexData []resources.VertexEuclidean
@@ -192,6 +201,9 @@ func main() {
 		}
 
 	}
+
+	fmt.Println(cellData)
+	fmt.Println(faceData)
 
 	type sdfFunction func([3]float64) float64
 

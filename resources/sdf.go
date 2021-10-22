@@ -26,7 +26,7 @@ func Sdf(p [3]float64, faces [][]Face, flag string) float64 {
 
 	} else {
 
-		norm = 100.0
+		norm = vector.Norm3(p) - 1.5
 
 	}
 
