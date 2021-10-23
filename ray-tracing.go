@@ -260,6 +260,23 @@ func main() {
 			depthStatistics = append(depthStatistics, 0)
 		}
 
+		// wavelengths := []float64{}
+		// eta2 := []float64{}
+		// blackBody := []float64{}
+
+		// for i := 0; i < 81; i++ {
+
+		// 	wavelengths = append(wavelengths, 380.0+float64(i)*5.0)
+		// 	eta2 = append(eta2, 2.0+0.01*float64(i))
+		// 	//blackBody = append(blackBody, resources.BlackBodySpectrum(wavelengths[i], 7000))
+		// 	blackBody = append(blackBody, 1)
+
+		// }
+
+		// fmt.Println(wavelengths)
+		// fmt.Println(eta2)
+		// fmt.Println(blackBody)
+
 		for i := 0; i < width; i++ {
 
 			fmt.Print("\033[K\r")
@@ -274,6 +291,7 @@ func main() {
 				dir = vector.Sum3(vector.Sum3(oc, vector.Scale3(up, jFloat)), vector.Scale3(left, iFloat))
 
 				colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, depthStatisticsLocal = resources.RayTrace(sdf, dir, camera, configData.Eta1, [3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B}, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
+				//colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, depthStatisticsLocal = resources.RayTraceSpectral(sdf, dir, camera, configData.Eta1, eta2, blackBody, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
 
 				r = colour[0]
 				g = colour[1]

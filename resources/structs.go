@@ -30,3 +30,13 @@ type PointVisibility struct {
 	Point   [3]float64
 	Visible bool
 }
+
+type ray struct {
+	pos     [3]float64
+	dir     [3]float64
+	weight  float64
+	rayType string
+	parent  int
+	inside  bool
+	layer   int
+}
