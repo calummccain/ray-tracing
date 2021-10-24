@@ -175,7 +175,7 @@ func colorOfDir(dir, pos [3]float64, j int) [3]float64 {
 	y := x * dir[1] / dir[0]
 	z := x * dir[2] / dir[0]
 
-	if math.Abs(y) < 20 && math.Abs(z) < 20.0 {
+	if math.Abs(y) < 20.0 && math.Abs(z) < 20.0 {
 		newColor = colors[j]
 	} else {
 		newColor = [3]float64{0, 0, 0}
