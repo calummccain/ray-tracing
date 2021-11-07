@@ -10,21 +10,19 @@ func Clamp(x, min, max float64) float64 {
 
 func Smax(a, b float64) float64 {
 
-	k := SmaxK
-
-	if a+k < b {
+	if a+SmaxK < b {
 
 		return b
 
-	} else if b+k < a {
+	} else if b+SmaxK < a {
 
 		return a
 
 	} else {
 
-		ab := 0.5 + 0.5*(a-b)/k
+		ab := 0.5 + 0.5*(a-b)/SmaxK
 
-		return (1-ab)*b + ab*a + k*ab*(1-ab)
+		return (1-ab)*b + ab*a + SmaxK*ab*(1-ab)
 
 	}
 
@@ -32,21 +30,19 @@ func Smax(a, b float64) float64 {
 
 func Smin(a, b float64) float64 {
 
-	k := SminK
-
-	if a+k < b {
+	if a+SminK < b {
 
 		return a
 
-	} else if b+k < a {
+	} else if b+SminK < a {
 
 		return b
 
 	} else {
 
-		ab := 0.5 + 0.5*(a-b)/k
+		ab := 0.5 + 0.5*(a-b)/SminK
 
-		return ab*b + (1-ab)*a - k*ab*(1-ab)
+		return ab*b + (1-ab)*a - SminK*ab*(1-ab)
 
 	}
 
@@ -68,6 +64,12 @@ func SumInt(vec1, vec2 []int) []int {
 
 func RotateX(p [3]float64, theta float64) [3]float64 {
 
+	if theta == 0 {
+
+		return p
+
+	}
+
 	c := math.Cos(theta)
 	s := math.Sin(theta)
 
@@ -77,6 +79,12 @@ func RotateX(p [3]float64, theta float64) [3]float64 {
 
 func RotateY(p [3]float64, theta float64) [3]float64 {
 
+	if theta == 0 {
+
+		return p
+
+	}
+
 	c := math.Cos(theta)
 	s := math.Sin(theta)
 
@@ -85,6 +93,12 @@ func RotateY(p [3]float64, theta float64) [3]float64 {
 }
 
 func RotateZ(p [3]float64, theta float64) [3]float64 {
+
+	if theta == 0 {
+
+		return p
+
+	}
 
 	c := math.Cos(theta)
 	s := math.Sin(theta)

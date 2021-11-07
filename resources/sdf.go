@@ -6,6 +6,12 @@ import (
 	"github.com/calummccain/coxeter/vector"
 )
 
+//
+// Union: min(sdf_a, sdf_b)
+// Intersection: max(sdf_a, sdf_b)
+// Subtraction: max(sdf_a, -sdf_b)
+//
+
 // Signed distance function of a torus with radii ra and rb
 func SdfTorus(p [3]float64, ra, rb float64) float64 {
 
@@ -14,37 +20,49 @@ func SdfTorus(p [3]float64, ra, rb float64) float64 {
 }
 
 // Signed distance function of a spherical/euclidean/hyperbolic cell
-func Sdf(p [3]float64, faces [][]Face, flag string) float64 {
+func Sdf(p [3]float64, faces [][]Face, flag string) (val float64) {
 
-	var val, val2 float64
-
-	var norm float64
-
-	if flag == "poincare" {
-
-		norm = vector.Norm3(p) - 1.0
-
-	} else {
-
-		norm = vector.Norm3(p) - 2.0
-
-	}
+	var val2 float64
 
 	for i := 0; i < len(faces); i++ {
 
-		val2 = norm
+		if faces[i][0].Outside {
 
-		for j := 0; j < len(faces[i]); j++ {
+			if faces[i][0].Type == "sphere" {
+
+				val2 = faces[i][0].Radius - vector.Distance3(p, faces[i][0].SphereCenter)
+
+			} else {
+
+				val2 = faces[i][0].D - vector.Dot3(p, faces[i][0].Normal)
+
+			}
+
+		} else {
+
+			if faces[i][0].Type == "sphere" {
+
+				val2 = vector.Distance3(p, faces[i][0].SphereCenter) - faces[i][0].Radius
+
+			} else {
+
+				val2 = -faces[i][0].D + vector.Dot3(p, faces[i][0].Normal)
+
+			}
+
+		}
+
+		for j := 1; j < len(faces[i]); j++ {
 
 			if faces[i][j].Outside {
 
 				if faces[i][j].Type == "sphere" {
 
-					val2 = Smax(val2, faces[i][j].Radius-vector.Distance(p[:], faces[i][j].SphereCenter[:]))
+					val2 = math.Max(val2, faces[i][j].Radius-vector.Distance3(p, faces[i][j].SphereCenter))
 
 				} else {
 
-					val2 = Smax(val2, faces[i][j].D-vector.Dot3(p, faces[i][j].Normal))
+					val2 = math.Max(val2, faces[i][j].D-vector.Dot3(p, faces[i][j].Normal))
 
 				}
 
@@ -52,11 +70,11 @@ func Sdf(p [3]float64, faces [][]Face, flag string) float64 {
 
 				if faces[i][j].Type == "sphere" {
 
-					val2 = Smax(val2, vector.Distance(p[:], faces[i][j].SphereCenter[:])-faces[i][j].Radius)
+					val2 = math.Max(val2, vector.Distance3(p, faces[i][j].SphereCenter)-faces[i][j].Radius)
 
 				} else {
 
-					val2 = Smax(val2, -faces[i][j].D+vector.Dot3(p, faces[i][j].Normal))
+					val2 = math.Max(val2, -faces[i][j].D+vector.Dot3(p, faces[i][j].Normal))
 
 				}
 
@@ -73,6 +91,12 @@ func Sdf(p [3]float64, faces [][]Face, flag string) float64 {
 			val = math.Min(val, val2)
 
 		}
+
+	}
+
+	if flag == "poincare" {
+
+		val = math.Max(vector.Norm3(p)-1.0, val)
 
 	}
 

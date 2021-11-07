@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"math/rand"
+
 	"github.com/calummccain/coxeter/vector"
 )
 
@@ -14,7 +16,7 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 	var wShift, hShift float64
 	var shiftedDir [3]float64
 
-	var rays [][]ray
+	var rays []ray
 	var newRays []ray
 
 	var newPos [3]float64
@@ -25,6 +27,8 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 	var refractDir [3]float64
 	var refract bool
+
+	var j int
 
 	testRefract := true
 	testReflect := true
@@ -47,97 +51,93 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 			shiftedDir = vector.Normalise3(vector.Sum3(vector.Sum3(dir, vector.Scale3(up, hShift)), vector.Scale3(left, wShift)))
 
-			for j := 0; j < 81; j += 10 {
+			j = rand.Intn(81)
 
-				numberOfRays += 1
+			numberOfRays += 1
 
-				rays = [][]ray{
-					{
-						{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1},
-					},
-				}
+			rays = []ray{
+				{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1},
+			}
 
-				k := 0
-				for k < iterations && len(rays[k]) > 0 {
+			k := 0
+			for k < iterations && len(rays) > 0 {
 
-					newRays = []ray{}
+				newRays = []ray{}
 
-					for i := 0; i < len(rays[k]); i++ {
+				for i := 0; i < len(rays); i++ {
 
-						newPos, _, _ = RayMarch(sdf, rays[k][i].pos, rays[k][i].dir)
-						numberOfMarches += 1
+					newPos, _, _ = RayMarch(sdf, rays[i].pos, rays[i].dir)
+					numberOfMarches += 1
 
-						if !rays[k][i].inside {
+					if !rays[i].inside {
 
-							if k > 0 {
+						if k > 0 {
 
-								norm = CalcNormal(sdf, rays[k][i].pos)
-								spectrum[j] += rays[k][i].weight * spectralColour(sdf, rays[k][i].pos, norm, blackBody[j])
+							norm = CalcNormal(sdf, rays[i].pos)
+							spectrum[j] += rays[i].weight * spectralColour(sdf, rays[i].pos, norm, blackBody[j])
 
-							} else {
+						} else {
 
-								spectrum[j] += spectralColour(sdf, pos, shiftedDir, blackBody[j])
-
-							}
-
-						}
-
-						norm = CalcNormal(sdf, newPos)
-
-						schlick = Fresnel(rays[k][i].dir, norm, eta1, eta2[j])
-
-						if testReflect && rays[k][i].weight*schlick > FactorCutoff {
-
-							if rays[k][i].inside {
-								newRayPos = vector.Sum3(newPos, vector.Scale3(norm, -shift))
-							} else {
-								newRayPos = vector.Sum3(newPos, vector.Scale3(norm, shift))
-							}
-
-							newRays = append(newRays, ray{
-								pos:     newRayPos,
-								dir:     Reflect(rays[k][i].dir, norm),
-								weight:  rays[k][i].weight * schlick,
-								rayType: "reflect",
-								parent:  i,
-								inside:  rays[k][i].inside,
-								layer:   k,
-							},
-							)
-						}
-
-						if testRefract {
-
-							refractDir, refract = Refract(rays[k][i].dir, norm, eta1, eta2[j])
-
-							if refract && rays[k][i].weight*(1-schlick) > FactorCutoff {
-
-								if rays[k][i].inside {
-									newRayPos = vector.Sum3(newPos, vector.Scale3(norm, shift))
-								} else {
-									newRayPos = vector.Sum3(newPos, vector.Scale3(norm, -shift))
-								}
-
-								newRays = append(newRays, ray{
-									pos:     newRayPos,
-									dir:     refractDir,
-									weight:  rays[k][i].weight * (1 - schlick),
-									rayType: "refract",
-									parent:  i,
-									inside:  !rays[k][i].inside,
-									layer:   k,
-								})
-
-							}
+							spectrum[j] += spectralColour(sdf, pos, shiftedDir, blackBody[j])
 
 						}
 
 					}
 
-					k++
-					rays = append(rays, newRays)
+					norm = CalcNormal(sdf, newPos)
+
+					schlick = Fresnel(rays[i].dir, norm, eta1/eta2[j])
+
+					if testReflect && rays[i].weight*schlick > FactorCutoff {
+
+						if rays[i].inside {
+							newRayPos = vector.Sum3(newPos, vector.Scale3(norm, -shift))
+						} else {
+							newRayPos = vector.Sum3(newPos, vector.Scale3(norm, shift))
+						}
+
+						newRays = append(newRays, ray{
+							pos:     newRayPos,
+							dir:     Reflect(rays[i].dir, norm),
+							weight:  rays[i].weight * schlick,
+							rayType: "reflect",
+							parent:  i,
+							inside:  rays[i].inside,
+							layer:   k,
+						},
+						)
+					}
+
+					if testRefract {
+
+						refractDir, refract = Refract(rays[i].dir, norm, eta1, eta2[j])
+
+						if refract && rays[i].weight*(1-schlick) > FactorCutoff {
+
+							if rays[i].inside {
+								newRayPos = vector.Sum3(newPos, vector.Scale3(norm, shift))
+							} else {
+								newRayPos = vector.Sum3(newPos, vector.Scale3(norm, -shift))
+							}
+
+							newRays = append(newRays, ray{
+								pos:     newRayPos,
+								dir:     refractDir,
+								weight:  rays[i].weight * (1 - schlick),
+								rayType: "refract",
+								parent:  i,
+								inside:  !rays[i].inside,
+								layer:   k,
+							})
+
+						}
+
+					}
 
 				}
+
+				k++
+				rays = newRays
 
 			}
 
@@ -146,23 +146,28 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 	}
 
 	xyz := IntegrateSpectrum(spectrum)
-	xyz = Normalise(xyz)
-	rgb := XYZToRGB(xyz)
-	//rgb = [3]float64{GammaCorrection(rgb[0]), GammaCorrection(rgb[1]), GammaCorrection(rgb[2])}
+	r, g, b := xyztorgb(SMPTEsystem, xyz[0], xyz[1], xyz[2])
+	r, g, b = constrainrgb(r, g, b)
+	rgb := normrgb([3]float64{r, g, b})
 
-	numberOfHits := 3*raysPerPixel*raysPerPixel - depthStatistics[0]
+	// xyz := IntegrateSpectrum(spectrum)
+	// xyz = Normalise(xyz)
+	// rgb := XYZToRGB(xyz)
+	// rgb = [3]float64{GammaCorrection(rgb[0]), GammaCorrection(rgb[1]), GammaCorrection(rgb[2])}
 
-	return Desaturate(rgb), numberOfRays, numberOfMarches, numberOfHits, depthStatistics
+	numberOfHits := raysPerPixel*raysPerPixel - depthStatistics[0]
+
+	return rgb, numberOfRays, numberOfMarches, numberOfHits, depthStatistics
 
 }
 
 func spectralColour(sdf func([3]float64) float64, point, norm [3]float64, blackBody float64) (output float64) {
 
-	lightPos := [3]float64{-5, 2, 0}
+	lightPos := [3]float64{-1, 1, 0}
 	dir := vector.Normalise3(vector.Diff3(lightPos, point))
 	_, hit, _ := RayMarch(sdf, point, dir)
 
-	if !hit {
+	if hit {
 
 		output = blackBody * vector.Dot3(dir, norm)
 

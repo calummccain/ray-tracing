@@ -44,11 +44,9 @@ func Schlick(inc, norm [3]float64, eta1, eta2 float64) float64 {
 
 }
 
-func Fresnel(inc, norm [3]float64, eta1, eta2 float64) float64 {
+func Fresnel(inc, norm [3]float64, eta float64) float64 {
 
 	dot1 := -vector.Dot3(inc, norm)
-
-	eta := eta1 / eta2
 
 	if dot1 < 0 {
 

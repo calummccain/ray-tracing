@@ -2,15 +2,18 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"io"
 	"io/ioutil"
+	"log"
 	"math"
 	"os"
 	"ray-tracing/resources"
+	"runtime/pprof"
 	"time"
 
 	"github.com/calummccain/coxeter/data"
@@ -53,6 +56,18 @@ type config struct {
 }
 
 func main() {
+
+	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	timeString := time.Now().Unix()
 
@@ -202,6 +217,17 @@ func main() {
 
 	}
 
+	for i := 0; i < len(faceData); i++ {
+
+		for j := 0; j < len(faceData[i]); j++ {
+
+			faceData[i][j].SphereCenter = resources.RotateXYZ(faceData[i][j].SphereCenter, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ)
+			faceData[i][j].Normal = resources.RotateXYZ(faceData[i][j].Normal, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ)
+
+		}
+
+	}
+
 	type sdfFunction func([3]float64) float64
 
 	var sdf sdfFunction
@@ -228,10 +254,15 @@ func main() {
 			configData.Model = ""
 		}
 
+		fmt.Println(configData.Model)
+
 		sdf = func(p [3]float64) float64 {
-			return resources.Sdf(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), faceData, configData.Model)
+			return resources.Sdf(p, faceData, configData.Model)
 		}
+
 	}
+
+	fmt.Println(faceData)
 
 	for time := start; time < end; time++ {
 
@@ -239,7 +270,8 @@ func main() {
 		origin = [3]float64{0, 0, 0}
 		up = resources.RotateXYZ([3]float64{0, 0, 1}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
 
-		oc = vector.Normalise3(vector.Diff3(origin, camera))
+		oc = vector.Diff3(origin, camera)
+		oc = vector.Normalise3(oc)
 		left = vector.Cross3(oc, up)
 
 		invWidth := 1.0 / float64(width)
@@ -249,16 +281,18 @@ func main() {
 		numberOfMarches := 0
 		averageDepth := 0.0
 		hitPixels := 0
-		depthStatistics := []int{}
+		//depthStatistics := []int{}
 
 		var numberOfRaysLocal int
 		var numberOfMarchesLocal int
 		var numberOfHitsLocal int
 		var depthStatisticsLocal []int
 
-		for l := 0; l < configData.NumberOfBounces; l++ {
-			depthStatistics = append(depthStatistics, 0)
-		}
+		depthStatistics := make([]int, configData.NumberOfBounces)
+
+		// for l := 0; l < configData.NumberOfBounces; l++ {
+		// 	depthStatistics = append(depthStatistics, 0)
+		// }
 
 		// wavelengths := []float64{}
 		// eta2 := []float64{}
@@ -266,10 +300,10 @@ func main() {
 
 		// for i := 0; i < 81; i++ {
 
-		// 	wavelengths = append(wavelengths, 380.0+float64(i)*5.0)
-		// 	eta2 = append(eta2, 2.0+0.01*float64(i))
-		// 	//blackBody = append(blackBody, resources.BlackBodySpectrum(wavelengths[i], 7000))
-		// 	blackBody = append(blackBody, 1)
+		// 	wavelengths = append(wavelengths, 380.0+float64(5*i))
+		// 	eta2 = append(eta2, 2.0+0.005*float64(i))
+		// 	blackBody = append(blackBody, resources.BlackBodySpectrum(wavelengths[i], 6500))
+		// 	//blackBody = append(blackBody, 1)
 
 		// }
 
@@ -279,12 +313,12 @@ func main() {
 
 		for i := 0; i < width; i++ {
 
-			fmt.Print("\033[K\r")
-			fmt.Print(i)
-
 			iFloat = float64(i)*invWidth - 0.5*(1-invWidth)
 
 			for j := 0; j < height; j++ {
+
+				fmt.Print("\033[K\r")
+				fmt.Print(i, " - ", j)
 
 				jFloat = float64(j)*invHeight - 0.5*(1-invHeight)
 

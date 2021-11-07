@@ -16,7 +16,7 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 	var wShift, hShift float64
 	var shiftedDir [3]float64
 
-	var rays [][]ray
+	var rays []ray
 	var newRays []ray
 
 	var newPos [3]float64
@@ -40,6 +40,8 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 	invRaysPerPixelFloat64 := 1.0 / float64(raysPerPixel)
 
+	eta := [3]float64{eta1 / eta2[0], eta1 / eta2[1], eta1 / eta2[2]}
+
 	for w := 0; w < raysPerPixel; w++ {
 
 		wShift = (float64(w) - float64(raysPerPixel-1)*0.5) * invWidth * invRaysPerPixelFloat64
@@ -54,20 +56,16 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 				numberOfRays += 1
 
-				rays = [][]ray{
-					{
-						{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1},
-					},
-				}
+				rays = []ray{{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1}}
 
 				k := 0
-				for k < iterations && len(rays[k]) > 0 {
+				for k < iterations && len(rays) > 0 {
 
 					newRays = []ray{}
 
-					for i := 0; i < len(rays[k]); i++ {
+					for i := 0; i < len(rays); i++ {
 
-						newPos, hit, _ = RayMarch(sdf, rays[k][i].pos, rays[k][i].dir)
+						newPos, hit, _ = RayMarch(sdf, rays[i].pos, rays[i].dir)
 						numberOfMarches += 1
 
 						if !hit {
@@ -76,13 +74,13 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 							if k > 0 {
 
-								norm = CalcNormal(sdf, rays[k][i].pos)
+								norm = CalcNormal(sdf, rays[i].pos)
 
-								pixelColor = vector.Sum3(pixelColor, vector.Scale3(colorOfDir(rays[k][i].dir, rays[k][i].pos, j), rays[k][i].weight))
+								pixelColor = vector.Sum3(pixelColor, vector.Scale3(colorOfDir(rays[i].dir, rays[i].pos, j), rays[i].weight))
 
 							} else {
 
-								pixelColor = vector.Sum3(pixelColor, colorOfDir(rays[k][i].dir, rays[k][i].pos, j))
+								pixelColor = vector.Sum3(pixelColor, colorOfDir(rays[i].dir, rays[i].pos, j))
 
 							}
 
@@ -90,11 +88,11 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 							norm = CalcNormal(sdf, newPos)
 
-							schlick = Fresnel(rays[k][i].dir, norm, eta1, eta2[j])
+							schlick = Fresnel(rays[i].dir, norm, eta[j])
 
-							if testReflect && rays[k][i].weight*schlick > FactorCutoff {
+							if testReflect && rays[i].weight*schlick > FactorCutoff {
 
-								if rays[k][i].inside {
+								if rays[i].inside {
 									newRayPos = vector.Sum3(newPos, vector.Scale3(norm, -shift))
 								} else {
 									newRayPos = vector.Sum3(newPos, vector.Scale3(norm, shift))
@@ -102,11 +100,11 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 								newRays = append(newRays, ray{
 									pos:     newRayPos,
-									dir:     Reflect(rays[k][i].dir, norm),
-									weight:  rays[k][i].weight * schlick,
+									dir:     Reflect(rays[i].dir, norm),
+									weight:  rays[i].weight * schlick,
 									rayType: "reflect",
 									parent:  i,
-									inside:  rays[k][i].inside,
+									inside:  rays[i].inside,
 									layer:   k,
 								},
 								)
@@ -114,11 +112,11 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 							if testRefract {
 
-								refractDir, refract = Refract(rays[k][i].dir, norm, eta1, eta2[j])
+								refractDir, refract = Refract(rays[i].dir, norm, eta1, eta2[j])
 
-								if refract && rays[k][i].weight*(1-schlick) > FactorCutoff {
+								if refract && rays[i].weight*(1-schlick) > FactorCutoff {
 
-									if rays[k][i].inside {
+									if rays[i].inside {
 										newRayPos = vector.Sum3(newPos, vector.Scale3(norm, shift))
 									} else {
 										newRayPos = vector.Sum3(newPos, vector.Scale3(norm, -shift))
@@ -127,10 +125,10 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 									newRays = append(newRays, ray{
 										pos:     newRayPos,
 										dir:     refractDir,
-										weight:  rays[k][i].weight * (1 - schlick),
+										weight:  rays[i].weight * (1 - schlick),
 										rayType: "refract",
 										parent:  i,
-										inside:  !rays[k][i].inside,
+										inside:  !rays[i].inside,
 										layer:   k,
 									})
 
@@ -143,7 +141,7 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 					}
 
 					k++
-					rays = append(rays, newRays)
+					rays = newRays
 
 				}
 

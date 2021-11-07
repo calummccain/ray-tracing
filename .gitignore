@@ -19,3 +19,6 @@ images/
 config.json
 
 .DS_store
+
+file*.txt
+*.prof
