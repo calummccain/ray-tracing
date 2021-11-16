@@ -112,7 +112,7 @@ func RayTrace(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, e
 
 							if testRefract {
 
-								refractDir, refract = Refract(rays[i].dir, norm, eta1, eta2[j])
+								refractDir, refract = Refract(rays[i].dir, norm, eta1/eta2[j])
 
 								if refract && rays[i].weight*(1-schlick) > FactorCutoff {
 

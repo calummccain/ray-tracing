@@ -6,10 +6,9 @@ import (
 	"github.com/calummccain/coxeter/vector"
 )
 
-func Refract(inc, norm [3]float64, eta1, eta2 float64) ([3]float64, bool) {
+func Refract(inc, norm [3]float64, eta float64) ([3]float64, bool) {
 
 	dot := -vector.Dot3(inc, norm)
-	eta := eta1 / eta2
 
 	if dot < 0 {
 

@@ -40,3 +40,12 @@ type ray struct {
 	inside  bool
 	layer   int
 }
+
+type Light struct {
+	Pos    [3]float64
+	Up     [3]float64
+	Left   [3]float64
+	Normal [3]float64
+	Height float64
+	Width  float64
+}

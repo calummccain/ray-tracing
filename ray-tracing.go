@@ -53,6 +53,9 @@ type config struct {
 	CameraRotateY   float64
 	CameraRotateZ   float64
 	Save            bool
+	SpectralRays    int
+	Temp            int
+	Spectral        bool
 }
 
 func main() {
@@ -254,7 +257,7 @@ func main() {
 			configData.Model = ""
 		}
 
-		fmt.Println(configData.Model)
+		// fmt.Println(configData.Model)
 
 		sdf = func(p [3]float64) float64 {
 			return resources.Sdf(p, faceData, configData.Model)
@@ -262,9 +265,12 @@ func main() {
 
 	}
 
-	fmt.Println(faceData)
+	// fmt.Println(faceData)
 
 	for time := start; time < end; time++ {
+
+		light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, 0, 0}, Height: 0.5, Width: 0.5}
+		light.Normal = vector.Cross3(light.Up, light.Left)
 
 		camera = resources.RotateXYZ([3]float64{configData.Distance, 0, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
 		origin = [3]float64{0, 0, 0}
@@ -286,30 +292,61 @@ func main() {
 		var numberOfRaysLocal int
 		var numberOfMarchesLocal int
 		var numberOfHitsLocal int
-		var depthStatisticsLocal []int
+		//var depthStatisticsLocal []int
 
-		depthStatistics := make([]int, configData.NumberOfBounces)
+		//depthStatistics := make([]int, configData.NumberOfBounces+1)
 
-		// for l := 0; l < configData.NumberOfBounces; l++ {
+		// for l := 0; l <= configData.NumberOfBounces; l++ {
 		// 	depthStatistics = append(depthStatistics, 0)
 		// }
 
-		// wavelengths := []float64{}
-		// eta2 := []float64{}
-		// blackBody := []float64{}
+		wavelengths := []float64{}
+		eta2 := []float64{}
+		blackBody := []float64{}
 
-		// for i := 0; i < 81; i++ {
+		for i := 0; i < configData.SpectralRays; i++ {
 
-		// 	wavelengths = append(wavelengths, 380.0+float64(5*i))
-		// 	eta2 = append(eta2, 2.0+0.005*float64(i))
-		// 	blackBody = append(blackBody, resources.BlackBodySpectrum(wavelengths[i], 6500))
-		// 	//blackBody = append(blackBody, 1)
+			wavelengths = append(wavelengths, 380.0+400*(float64(i)+0.5)/float64(configData.SpectralRays))
+			eta2 = append(eta2, 1.0+math.Pow(1.0+float64(i)/float64(configData.SpectralRays), 1.2))
+			//eta2 = append(eta2, 1)
+			blackBody = append(blackBody, resources.BlackBodySpectrum(wavelengths[i], float64(configData.Temp)))
+			//blackBody = append(blackBody, 1.0)
 
-		// }
+		}
 
-		// fmt.Println(wavelengths)
-		// fmt.Println(eta2)
-		// fmt.Println(blackBody)
+		fmt.Println(wavelengths)
+		fmt.Println(eta2)
+		fmt.Println(blackBody)
+
+		newX := make([]float64, configData.SpectralRays)
+		newY := make([]float64, configData.SpectralRays)
+		newZ := make([]float64, configData.SpectralRays)
+
+		for ii := 0; ii < configData.SpectralRays; ii++ {
+
+			for jj := 0; jj < 80/configData.SpectralRays; jj++ {
+
+				//fmt.Println(ii*80/configData.SpectralRays + jj)
+
+				newX[ii] += resources.XMatchFunction[ii*80/configData.SpectralRays+jj]
+				newY[ii] += resources.YMatchFunction[ii*80/configData.SpectralRays+jj]
+				newZ[ii] += resources.ZMatchFunction[ii*80/configData.SpectralRays+jj]
+
+			}
+
+			newX[ii] *= float64(configData.SpectralRays) / 80.0
+			newY[ii] *= float64(configData.SpectralRays) / 80.0
+			newZ[ii] *= float64(configData.SpectralRays) / 80.0
+
+		}
+
+		fmt.Println(newX)
+		fmt.Println(newY)
+		fmt.Println(newZ)
+
+		resources.XMatchFunction = newX
+		resources.YMatchFunction = newY
+		resources.ZMatchFunction = newZ
 
 		for i := 0; i < width; i++ {
 
@@ -324,8 +361,43 @@ func main() {
 
 				dir = vector.Sum3(vector.Sum3(oc, vector.Scale3(up, jFloat)), vector.Scale3(left, iFloat))
 
-				colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, depthStatisticsLocal = resources.RayTrace(sdf, dir, camera, configData.Eta1, [3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B}, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
-				//colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, depthStatisticsLocal = resources.RayTraceSpectral(sdf, dir, camera, configData.Eta1, eta2, blackBody, configData.NumberOfBounces, faceData, up, left, invHeight, invWidth, configData.RaysPerPixel)
+				if !configData.Spectral {
+
+					colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, _ = resources.RayTrace(
+						sdf,
+						dir,
+						camera,
+						configData.Eta1,
+						[3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B},
+						configData.NumberOfBounces,
+						faceData,
+						up,
+						left,
+						invHeight,
+						invWidth,
+						configData.RaysPerPixel,
+					)
+
+				} else {
+
+					colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, _ = resources.RayTraceSpectral(
+						sdf,
+						dir,
+						camera,
+						configData.Eta1,
+						eta2,
+						blackBody,
+						configData.NumberOfBounces,
+						faceData,
+						up,
+						left,
+						invHeight,
+						invWidth,
+						configData.RaysPerPixel,
+						light,
+					)
+
+				}
 
 				r = colour[0]
 				g = colour[1]
@@ -348,7 +420,7 @@ func main() {
 				numberOfRays += numberOfRaysLocal
 				numberOfMarches += numberOfMarchesLocal
 				hitPixels += numberOfHitsLocal
-				depthStatistics = resources.SumInt(depthStatistics, depthStatisticsLocal)
+				//depthStatistics = resources.SumInt(depthStatistics, depthStatisticsLocal)
 
 			}
 
@@ -362,7 +434,7 @@ func main() {
 		fmt.Println("Number of Marches: ", numberOfMarches)
 		fmt.Println("Number of hit Pixels: ", hitPixels)
 		fmt.Println("Average Depth of Ray : ", math.Log2(averageDepth))
-		fmt.Println("Depth Statistics: ", depthStatistics)
+		//fmt.Println("Depth Statistics: ", depthStatistics)
 		fmt.Println("Number of Faces: ", len(faceData[0]))
 
 		f, _ := os.Create("images/test.png")
