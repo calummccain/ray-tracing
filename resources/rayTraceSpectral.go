@@ -1,12 +1,14 @@
 package resources
 
 import (
+	"image/color"
 	"math"
+	"math/rand"
 
 	"github.com/calummccain/coxeter/vector"
 )
 
-func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, eta2 []float64, blackBody []float64, iterations int, faces [][]Face, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int, light Light) ([3]float64, int, int, int, []int) {
+func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 float64, eta2 []float64, blackBody []float64, iterations int, faces [][]Face, up, left [3]float64, invHeight, invWidth float64, raysPerPixel int, light Light) (color.RGBA, int, int, int, []int) {
 
 	spectrum := make([]float64, len(eta2))
 	numberOfRays := 0
@@ -32,6 +34,11 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 	var j int
 
+	var t float64
+
+	var randInt int
+	var scaledJ int
+
 	testRefract := true
 	testReflect := true
 
@@ -51,12 +58,16 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 			shiftedDir = vector.Normalise3(vector.Sum3(vector.Sum3(dir, vector.Scale3(up, hShift)), vector.Scale3(left, wShift)))
 
-			for j = 0; j < len(eta2); j++ {
+			randInt = rand.Intn(len(eta2))
+
+			for j = 0; j < 3; j++ {
+
+				scaledJ = (randInt + (j*len(eta2))/3) % len(eta2)
 
 				numberOfRays += 1
 
 				rays = []ray{
-					{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1},
+					{pos: pos, dir: shiftedDir, weight: 1, rayType: "initial", parent: 0, inside: false, layer: -1, length: 0.0},
 				}
 
 				k := 0
@@ -66,15 +77,15 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 					for i := 0; i < len(rays); i++ {
 
-						newPos, hit, _ = RayMarch(sdf, rays[i].pos, rays[i].dir)
+						newPos, hit, t = RayMarch(sdf, rays[i].pos, rays[i].dir)
 						numberOfMarches += 1
 
 						if !hit && !rays[i].inside {
 
-							if rays[i].layer >= -1 {
+							if rays[i].layer >= 0 {
 
 								norm = CalcNormal(sdf, rays[i].pos)
-								spectrum[j] += rays[i].weight * spectralColourLinear(sdf, rays[i].pos, norm, blackBody[j], light)
+								spectrum[scaledJ] += rays[i].weight * spectralColourLinear(sdf, rays[i].pos, norm, blackBody[j], light, rays[i].length)
 
 							}
 
@@ -84,7 +95,7 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 						norm = CalcNormal(sdf, newPos)
 
-						schlick = Fresnel(rays[i].dir, norm, eta1/eta2[j])
+						schlick = Fresnel(rays[i].dir, norm, eta1/eta2[scaledJ])
 
 						if testReflect && rays[i].weight*schlick > FactorCutoff {
 
@@ -102,13 +113,14 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 								parent:  i,
 								inside:  rays[i].inside,
 								layer:   k,
+								length:  rays[i].length + t,
 							},
 							)
 						}
 
 						if testRefract {
 
-							refractDir, refract = Refract(rays[i].dir, norm, eta1/eta2[j])
+							refractDir, refract = Refract(rays[i].dir, norm, eta1/eta2[scaledJ])
 
 							if refract && rays[i].weight*(1-schlick) > FactorCutoff {
 
@@ -126,6 +138,7 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 									parent:  i,
 									inside:  !rays[i].inside,
 									layer:   k,
+									length:  rays[i].length + t,
 								})
 
 							}
@@ -145,14 +158,11 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 	}
 
-	for j = 0; j < len(eta2); j++ {
-		spectrum[j] /= (float64(numberOfRays) * float64(numberOfRays))
-	}
+	//fmt.Println(spectrum, SpectrumToRGBA(spectrum, Y_white))
 
-	xyz := IntegrateSpectrum(spectrum)
-	r, g, b := xyztorgb(SMPTEsystem, xyz[0], xyz[1], xyz[2])
-	r, g, b = constrainrgb(r, g, b)
-	rgb := normrgb([3]float64{r, g, b})
+	// for j = 0; j < len(eta2); j++ {
+	// 	spectrum[scaledJ] /= float64(numberOfRays)
+	// }
 
 	// xyz := IntegrateSpectrum(spectrum)
 	// xyz = Normalise(xyz)
@@ -161,7 +171,7 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 	numberOfHits := raysPerPixel*raysPerPixel - depthStatistics[0]
 
-	return rgb, numberOfRays, numberOfMarches, numberOfHits, depthStatistics
+	return SpectrumToRGBA(spectrum, Y_white), numberOfRays, numberOfMarches, numberOfHits, depthStatistics
 
 }
 
@@ -181,23 +191,24 @@ func spectralColourRadial(sdf func([3]float64) float64, dir, point, norm [3]floa
 
 }
 
-func spectralColourLinear(sdf func([3]float64) float64, point, norm [3]float64, blackBody float64, light Light) float64 {
-
-	_, hit, t := RayMarch(sdf, point, light.Pos)
+func spectralColourLinear(sdf func([3]float64) float64, point, norm [3]float64, blackBody float64, light Light, t float64) float64 {
 
 	output := 0.0
 
-	if !hit {
+	diff := vector.Diff3(light.Pos, point)
 
-		diff := vector.Diff3(point, light.Pos)
+	if vector.Dot3(light.Normal, diff) >= 0.0 {
 
-		if vector.Dot3(light.Normal, diff)/vector.Dot3(light.Normal, light.Pos) < 0.0 {
+		shiftedIntersection := vector.Diff3(vector.Scale3(light.Normal, vector.Dot3(light.Normal, diff)), diff)
 
-			shiftedIntersection := vector.Diff3(diff, vector.Scale3(light.Pos, vector.Dot3(light.Normal, diff)/vector.Dot3(light.Normal, light.Pos)))
+		if vector.Dot3(shiftedIntersection, light.Left) < light.Width && vector.Dot3(shiftedIntersection, light.Up) < light.Height &&
+			vector.Dot3(shiftedIntersection, light.Left) > -light.Width && vector.Dot3(shiftedIntersection, light.Up) > -light.Height {
 
-			if math.Abs(vector.Dot3(shiftedIntersection, light.Left)) < light.Width && math.Abs(vector.Dot3(shiftedIntersection, light.Up)) < light.Height {
+			_, hit, tt := RayMarch(sdf, point, light.Normal)
 
-				output = blackBody * math.Abs(vector.Dot3(light.Normal, norm)) / (t * t)
+			if !hit {
+
+				output = blackBody * math.Abs(vector.Dot3(light.Normal, norm)) / ((t + tt) * (t + tt))
 
 			}
 

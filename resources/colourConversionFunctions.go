@@ -1,6 +1,7 @@
 package resources
 
 import (
+	"image/color"
 	"math"
 )
 
@@ -44,6 +45,8 @@ var (
 	ZMatchFunction = []float64{0.0065, 0.0105, 0.0201, 0.0362, 0.0679, 0.1102, 0.2074, 0.3713, 0.6456, 1.0391, 1.3856, 1.623, 1.7471, 1.7826, 1.7721, 1.7441, 1.6692, 1.5281, 1.2876, 1.0419, 0.813, 0.6162, 0.4652, 0.3533, 0.272, 0.2123, 0.1582, 0.1117, 0.0782, 0.0573, 0.0422, 0.0298, 0.0203, 0.0134, 0.0087, 0.0057, 0.0039, 0.0027, 0.0021, 0.0018, 0.0017, 0.0014, 0.0011, 0.001, 0.0008, 0.0006, 0.0003, 0.0002, 0.0002, 0.0001, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 )
 
+var Y_white = 0.0
+
 // func upvptoxy(up, vp float64) (xc, yc float64) {
 
 // 	xc = (9.0 * up) / ((6.0 * up) - (16.0 * vp) + 12.0)
@@ -62,7 +65,13 @@ var (
 
 // }
 
-func xyztorgb(cs colourSystem, xc, yc, zc float64) (r, g, b float64) {
+func Xyztorgb(cs colourSystem, xc, yc, zc float64, scale bool) (r, g, b float64) {
+
+	if scale {
+		xc /= Y_white
+		yc /= Y_white
+		zc /= Y_white
+	}
 
 	var xr, yr, zr, xg, yg, zg, xb, yb, zb float64
 	var xw, yw, zw float64
@@ -93,9 +102,9 @@ func xyztorgb(cs colourSystem, xc, yc, zc float64) (r, g, b float64) {
 	by = (xg * zr) - (xr * zg)
 	bz = (xr * yg) - (xg * yr)
 
-	rw = ((rx * xw) + (ry * yw) + (rz * zw)) / yw
-	gw = ((gx * xw) + (gy * yw) + (gz * zw)) / yw
-	bw = ((bx * xw) + (by * yw) + (bz * zw)) / yw
+	rw = ((rx * xw) + (ry * yw) + (rz * zw))
+	gw = ((gx * xw) + (gy * yw) + (gz * zw))
+	bw = ((bx * xw) + (by * yw) + (bz * zw))
 
 	rx = rx / rw
 	ry = ry / rw
@@ -119,54 +128,68 @@ func xyztorgb(cs colourSystem, xc, yc, zc float64) (r, g, b float64) {
 // 	return (r >= 0) && (g >= 0) && (b >= 0)
 // }
 
-func constrainrgb(r, g, b float64) (r2, g2, b2 float64) {
+func Constrainrgb(r, g, b float64) (float64, float64, float64) {
 
-	w := math.Min(0.0, math.Min(r, math.Min(g, b)))
+	w := math.Min(r, math.Min(g, b))
 
-	if w >= 0 {
+	if w > 1.0 {
 
-		r2 = r - w
-		g2 = g - w
-		b2 = b - w
+		ww := math.Max(r, math.Max(g, b)) - 1
+
+		r -= ww
+		g -= ww
+		b -= ww
+
 	}
 
-	return r2, g2, b2
+	w = math.Max(r, math.Max(g, b))
+
+	for w < 0.0 {
+
+		r += 1.0
+		g += 1.0
+		b += 1.0
+
+		w = math.Max(r, math.Max(g, b))
+
+	}
+
+	// if w < 0.0 {
+
+	// 	r, g, b = r-w, g-w, b-w
+
+	// }
+
+	// w = math.Min(r, math.Min(g, b))
+	// ww := math.Max(r, math.Max(g, b))
+
+	// if w > 1.0 {
+
+	// 	}
+
+	//return Clamp(r, 0.0, 1.0), Clamp(g, 0.0, 1.0), Clamp(b, 0.0, 1.0)
+
+	return r, g, b
 
 }
 
-// func gammaCorrect(cs colourSystem, c float64) float64 {
+func GammaCorrect(c float64) float64 {
 
-// 	gamma := cs.gammaCorrection
+	if c > 0.0031308 {
+		return 1.055*math.Pow(c, 0.45) - 0.055
+	} else {
+		return 12.92 * c
+	}
 
-// 	newC := c
+}
 
-// 	if gamma == GAMMA_REC709 {
+func Gammacorrect(rgb [3]float64) [3]float64 {
 
-// 		cc := 0.018
+	return [3]float64{GammaCorrect(rgb[0]), GammaCorrect(rgb[1]), GammaCorrect(rgb[2])}
 
-// 		if c < cc {
-// 			newC *= ((1.099 * math.Pow(cc, 0.45)) - 0.099) / cc
-// 		} else {
-// 			newC = (1.099 * math.Pow(c, 0.45)) - 0.099
-// 		}
+}
 
-// 	} else {
-
-// 		newC = math.Pow(c, 1.0/gamma)
-
-// 	}
-
-// 	return newC
-
-// }
-
-// func gammaCorrectrgb(cs colourSystem, r, g, b float64) [3]float64 {
-
-// 	return [3]float64{gammaCorrect(cs, r), gammaCorrect(cs, g), gammaCorrect(cs, b)}
-
-// }
-
-func normrgb(x [3]float64) [3]float64 {
+func Normrgb(x [3]float64) [3]float64 {
 
 	rgb := [3]float64{0, 0, 0}
 	greatest := math.Max(x[0], math.Max(x[1], x[2]))
@@ -181,7 +204,7 @@ func normrgb(x [3]float64) [3]float64 {
 
 }
 
-func IntegrateSpectrum(spectrum []float64) [3]float64 {
+func IntegrateSpectrum(spectrum []float64, scale float64) [3]float64 {
 
 	x := 0.0
 	y := 0.0
@@ -192,14 +215,111 @@ func IntegrateSpectrum(spectrum []float64) [3]float64 {
 		x += XMatchFunction[i] * spectrum[i]
 		y += YMatchFunction[i] * spectrum[i]
 		z += ZMatchFunction[i] * spectrum[i]
-		// x += spectrum[i] / float64(len(spectrum))
-		// y += spectrum[i] / float64(len(spectrum))
-		// z += spectrum[i] / float64(len(spectrum))
 
 	}
 
-	sum := x + y + z
+	return [3]float64{x / scale, y / scale, z / scale}
 
-	return [3]float64{x / sum, y / sum, z / sum}
+}
+
+func XYZToRGB(x, y, z float64) (float64, float64, float64) {
+
+	// r := math.Max(2.3706743*x-0.9000405*y-0.4706338*z, 0)
+	// g := math.Max(-0.5138850*x+1.4253036*y+0.0885814*z, 0)
+	// b := math.Max(0.0052982*x-0.0146949*y+1.0093968*z, 0)
+
+	r := math.Min(math.Max(3.2406*x-1.5372*y-0.4986*z, 0), 1)
+	g := math.Min(math.Max(-0.9689*x+1.8758*y+0.0415*z, 0), 1)
+	b := math.Min(math.Max(0.0557*x-0.2040*y+1.0570*z, 0), 1)
+
+	// r := 3.2406*x - 1.5372*y - 0.4986*z
+	// g := -0.9689*x + 1.8758*y + 0.0415*z
+	// b := 0.0557*x - 0.2040*y + 1.0570*z
+
+	return r, g, b
+
+}
+
+func SpectrumToRGBA2(spectrum []float64) color.RGBA {
+
+	xyz := IntegrateSpectrum(spectrum, 1)
+
+	// x := xyz[0]
+	// y := xyz[1]
+	// z := xyz[2]
+
+	// x, y, z = x/y, 1, z/y
+
+	// xyz = [3]float64{x, y, z}
+
+	// var_R := xyz[0]*3.2406 + xyz[1]*-1.5372 + xyz[2]*-0.4986
+	// var_G := xyz[0]*-0.9689 + xyz[1]*1.8758 + xyz[2]*0.0415
+	// var_B := xyz[0]*0.057 + xyz[1]*-0.2040 + xyz[2]*1.0570
+	var_R := xyz[0]*1.656 + xyz[1]*-0.355 + xyz[2]*-0.255
+	var_G := xyz[0]*-0.707 + xyz[1]*1.655 + xyz[2]*0.036
+	var_B := xyz[0]*0.052 + xyz[1]*-0.121 + xyz[2]*1.012
+
+	if var_R > 0.0031308 {
+		var_R = 1.055*math.Pow(var_R, 0.45) - 0.055
+	} else {
+		var_R = 12.92 * var_R
+	}
+
+	if var_G > 0.0031308 {
+		var_G = 1.055*math.Pow(var_G, 0.45) - 0.055
+	} else {
+		var_G = 12.92 * var_G
+	}
+
+	if var_B > 0.0031308 {
+		var_B = 1.055*math.Pow(var_B, 0.45) - 0.055
+	} else {
+		var_B = 12.92 * var_B
+	}
+
+	return color.RGBA{
+		uint8(255 * var_R),
+		uint8(255 * var_G),
+		uint8(255 * var_B),
+		255,
+	}
+}
+
+func SpectrumToRGBA(spectrum []float64, scale float64) color.RGBA {
+
+	xyz := IntegrateSpectrum(spectrum, scale)
+
+	//fmt.Println(xyz)
+
+	r, g, b := Constrainrgb(xyz[0], xyz[1], xyz[2])
+
+	//fmt.Println(r, g, b)
+
+	r, g, b = XYZToRGB(r, g, b)
+	//r, g, b := XYZToRGB(xyz[0], xyz[1], xyz[2])
+
+	r = GammaCorrect(r)
+	g = GammaCorrect(g)
+	b = GammaCorrect(b)
+
+	//colour := Gammacorrect(Normrgb([3]float64{r, g, b}))
+	//colour := Gammacorrect([3]float64{r, g, b}, CIEsystem)
+	//colour := [3]float64{r, g, b}
+	// r = colour[0]
+	// g = colour[1]
+	// b = colour[2]
+
+	//sum := 0.2126*r + 0.7152*g + 0.0722*b
+
+	r *= 255.0
+	g *= 255.0
+	b *= 255.0
+
+	return color.RGBA{
+		uint8(r),
+		uint8(g),
+		uint8(b),
+		255,
+	}
 
 }

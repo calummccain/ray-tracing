@@ -95,7 +95,6 @@ import "math"
 func BlackBodySpectrum(l, T float64) float64 {
 
 	l = l * 0.000000001
-
 	// 2PIhc^2
 	c1 := 0.000000000000000374183
 	// hc/k_B

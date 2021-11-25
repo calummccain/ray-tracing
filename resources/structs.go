@@ -39,6 +39,7 @@ type ray struct {
 	parent  int
 	inside  bool
 	layer   int
+	length  float64
 }
 
 type Light struct {

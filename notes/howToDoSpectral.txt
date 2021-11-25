@@ -1,0 +1,18 @@
+1) Fire your rays into the scene. 
+   Remember that different wavelengths have different refraction indices
+2) When the rays can 'see' the light, calculate how much (if at all) of the
+   emitted spectrum is scene 
+   cos(theta) = direction of ray . (position of light - position of ray)
+3) Aggregate all of this data into an array listing how muuch of each 
+   wavelength reaches the pixel
+   pixelSpectrum = [*, *, *, ...]
+4) Integrate this spectrum against you cie matchinig functions 
+   xbar(lambda), ybar(lambda), zbar(lambda)
+
+   X = INT_380^780 pixelSpectrum * xbar(lambda) d lambda
+   Y = INT_380^780 pixelSpectrum * ybar(lambda) d lambda
+   Z = INT_380^780 pixelSpectrum * zbar(lambda) d lambda
+5) calculate x, y, z
+   x = X / (X+Y+Z)
+   y = Y / (X+Y+Z)
+   z = Z / (X+Y+Z)
