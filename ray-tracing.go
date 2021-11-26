@@ -82,10 +82,10 @@ func main() {
 	var iFloat, jFloat float64
 
 	// Cells is a list of the names of the cells to calculate for
-	cells := configData.CellGeometryData.Cells
+	cells := configData.CellGeometryConfig.Cells
 
 	// Pick and generate the data from the supplier p,q,r and t/r/_
-	cellData := resources.SelectGeometry(configData.CellGeometryData)
+	cellData := resources.SelectGeometry(configData.CellGeometryConfig)
 
 	faceData := [][]resources.Face{}
 
@@ -118,7 +118,7 @@ func main() {
 		for i := 0; i < len(cells); i++ {
 
 			vertexData = resources.GenerateVerticesHyperbolic(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
-			faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.CellGeometryData.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+			faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.CellGeometryConfig.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
 
 		}
 
@@ -158,11 +158,11 @@ func main() {
 	} else if configData.Sdf == "seh" {
 
 		if cellData.Metric == 's' || cellData.Metric == 'e' {
-			configData.CellGeometryData.Model = ""
+			configData.CellGeometryConfig.Model = ""
 		}
 
 		sdf = func(p [3]float64) float64 {
-			return resources.Sdf(p, faceData, configData.CellGeometryData.Model)
+			return resources.Sdf(p, faceData, configData.CellGeometryConfig.Model)
 		}
 
 	}
@@ -207,7 +207,7 @@ func main() {
 
 		wavelengths = append(wavelengths, 380.0+400*(float64(i)+0.5)/float64(configData.SpectralRays))
 		eta2 = append(eta2, 1.0+math.Pow(1.0+float64(i)/float64(configData.SpectralRays), 1.2))
-		blackBody = append(blackBody, 10000*resources.BlackBodySpectrum(wavelengths[i], float64(configData.Temp)))
+		blackBody = append(blackBody, 10000*resources.BlackBodySpectrum(wavelengths[i], configData.Temp))
 		whiteLight = append(whiteLight, resources.BlackBodySpectrum(wavelengths[i], 6500))
 
 	}
