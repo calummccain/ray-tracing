@@ -47,13 +47,9 @@ func main() {
 	var configData resources.Config
 	json.Unmarshal(configRead, &configData)
 
-	// Read the heights and width of gif in px
-	width := configData.Width
-	height := configData.Height
-
 	// Initialise the png images
 	spectrumImage := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{200, 500}})
-	rayTracedImage := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{width, height}})
+	rayTracedImage := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{configData.ImageConfig.Width, configData.ImageConfig.Height}})
 
 	var col color.Color
 	var r, g, b, a float64
@@ -128,58 +124,47 @@ func main() {
 
 		for j := 0; j < len(faceData[i]); j++ {
 
-			faceData[i][j].SphereCenter = resources.RotateXYZ(faceData[i][j].SphereCenter, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ)
-			faceData[i][j].Normal = resources.RotateXYZ(faceData[i][j].Normal, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ)
+			faceData[i][j].SphereCenter = resources.RotateXYZ(
+				faceData[i][j].SphereCenter, configData.ObjectConfig.ObjectRotateX,
+				configData.ObjectConfig.ObjectRotateY,
+				configData.ObjectConfig.ObjectRotateZ,
+			)
+			faceData[i][j].Normal = resources.RotateXYZ(
+				faceData[i][j].Normal,
+				configData.ObjectConfig.ObjectRotateX,
+				configData.ObjectConfig.ObjectRotateY,
+				configData.ObjectConfig.ObjectRotateZ,
+			)
 
 		}
 
 	}
 
-	type sdfFunction func([3]float64) float64
-
-	var sdf sdfFunction
-
-	if configData.Sdf == "sphere" {
-		sdf = func(p [3]float64) float64 {
-			return resources.SdfSphere(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), configData.SphereRadius)
-		}
-	} else if configData.Sdf == "cube" {
-		sdf = func(p [3]float64) float64 {
-			return resources.SdfCube(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), configData.CubeA, configData.CubeB, configData.CubeC)
-		}
-	} else if configData.Sdf == "torus" {
-		sdf = func(p [3]float64) float64 {
-			return resources.SdfTorus(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ), configData.TorusA, configData.TorusB)
-		}
-	} else if configData.Sdf == "spheres" {
-		sdf = func(p [3]float64) float64 {
-			return resources.SdfSpheres(resources.RotateXYZ(p, configData.ObjectRotateX, configData.ObjectRotateY, configData.ObjectRotateZ))
-		}
-	} else if configData.Sdf == "seh" {
-
-		if cellData.Metric == 's' || cellData.Metric == 'e' {
-			configData.CellGeometryConfig.Model = ""
-		}
-
-		sdf = func(p [3]float64) float64 {
-			return resources.Sdf(p, faceData, configData.CellGeometryConfig.Model)
-		}
-
-	}
+	sdf := resources.SdfFunction(configData, faceData)
 
 	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 1.0, Width: 1.0}
 	//light.Normal = vector.Cross3(light.Up, light.Left)
 
-	camera = resources.RotateXYZ([3]float64{configData.Distance, 0, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
+	camera = resources.RotateXYZ(
+		[3]float64{configData.CameraConfig.Distance, 0, 0},
+		configData.CameraConfig.CameraRotateX,
+		configData.CameraConfig.CameraRotateY,
+		configData.CameraConfig.CameraRotateZ,
+	)
 	origin = [3]float64{0, 0, 0}
-	up = resources.RotateXYZ([3]float64{0, 0, 1}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)
+	up = resources.RotateXYZ(
+		[3]float64{0, 0, 1},
+		configData.CameraConfig.CameraRotateX,
+		configData.CameraConfig.CameraRotateY,
+		configData.CameraConfig.CameraRotateZ,
+	)
 
 	oc = vector.Diff3(origin, camera)
 	oc = vector.Normalise3(oc)
 	left = vector.Cross3(oc, up)
 
-	invWidth := 1.0 / float64(width)
-	invHeight := 1.0 / float64(height)
+	invWidth := 1.0 / float64(configData.ImageConfig.Width)
+	invHeight := 1.0 / float64(configData.ImageConfig.Height)
 
 	numberOfRays := 0
 	numberOfMarches := 0

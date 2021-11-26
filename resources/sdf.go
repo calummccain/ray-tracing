@@ -13,9 +13,9 @@ import (
 //
 
 // Signed distance function of a torus with radii ra and rb
-func SdfTorus(p [3]float64, ra, rb float64) float64 {
+func SdfTorus(p [3]float64, torusConfig TorusConfig) float64 {
 
-	return vector.Norm2([2]float64{vector.Norm2([2]float64{p[1], p[2]}) - ra, p[0]}) - rb
+	return vector.Norm2([2]float64{vector.Norm2([2]float64{p[1], p[2]}) - torusConfig.TorusA, p[0]}) - torusConfig.TorusB
 
 }
 
@@ -105,16 +105,16 @@ func Sdf(p [3]float64, faces [][]Face, flag string) (val float64) {
 }
 
 // Signed distance function of a cuboid of lengths 2a, 2b, 2c
-func SdfCube(p [3]float64, a, b, c float64) float64 {
+func SdfCube(p [3]float64, cubeConfig CubeConfig) float64 {
 
-	return Smax(math.Abs(p[0])-a, Smax(math.Abs(p[1])-b, math.Abs(p[2])-c))
+	return Smax(math.Abs(p[0])-cubeConfig.CubeA, Smax(math.Abs(p[1])-cubeConfig.CubeB, math.Abs(p[2])-cubeConfig.CubeC))
 
 }
 
 // Signed distance function of a sphere of radius r
-func SdfSphere(p [3]float64, r float64) float64 {
+func SdfSphere(p [3]float64, sphereConfig SphereConfig) float64 {
 
-	return vector.Norm3(p) - r
+	return vector.Norm3(p) - sphereConfig.SphereRadius
 
 }
 
