@@ -19,44 +19,6 @@ import (
 	"github.com/calummccain/coxeter/vector"
 )
 
-type config struct {
-	P               int
-	Q               int
-	R               float64
-	Width           int
-	Height          int
-	Start           int
-	End             int
-	Sdf             string
-	Cells           []string
-	TruncRect       string
-	Model           string
-	NumberOfFaces   int
-	Distance        float64
-	Eta1            float64
-	Eta2R           float64
-	Eta2G           float64
-	Eta2B           float64
-	NumberOfBounces int
-	RaysPerPixel    int
-	SphereRadius    float64
-	CubeA           float64
-	CubeB           float64
-	CubeC           float64
-	TorusA          float64
-	TorusB          float64
-	ObjectRotateX   float64
-	ObjectRotateY   float64
-	ObjectRotateZ   float64
-	CameraRotateX   float64
-	CameraRotateY   float64
-	CameraRotateZ   float64
-	Save            bool
-	SpectralRays    int
-	Temp            int
-	Spectral        bool
-}
-
 func main() {
 
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
@@ -82,7 +44,7 @@ func main() {
 
 	configRead, _ := ioutil.ReadAll(configJson)
 
-	var configData config
+	var configData resources.Config
 	json.Unmarshal(configRead, &configData)
 
 	// Read the heights and width of gif in px
@@ -120,10 +82,10 @@ func main() {
 	var iFloat, jFloat float64
 
 	// Cells is a list of the names of the cells to calculate for
-	cells := configData.Cells
+	cells := configData.CellGeometryData.Cells
 
 	// Pick and generate the data from the supplier p,q,r and t/r/_
-	cellData := resources.SelectGeometry(configData.P, configData.Q, configData.R, configData.TruncRect, configData.NumberOfFaces)
+	cellData := resources.SelectGeometry(configData.CellGeometryData)
 
 	faceData := [][]resources.Face{}
 
@@ -156,7 +118,7 @@ func main() {
 		for i := 0; i < len(cells); i++ {
 
 			vertexData = resources.GenerateVerticesHyperbolic(cellData.Vertices, cells[i], cellData.Matrices, cellData.NumVertices)
-			faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
+			faceData = append(faceData, resources.GenerateFacesHyperbolic(cellData.NumFaces, cellData.Faces, vertexData, cellData.Metric, cellData.Vv, configData.CellGeometryData.Model, cellData.Matrices.F(vector.TransformVertices([][4]float64{cellData.C}, cells[i], cellData.Matrices)[0])))
 
 		}
 
@@ -196,11 +158,11 @@ func main() {
 	} else if configData.Sdf == "seh" {
 
 		if cellData.Metric == 's' || cellData.Metric == 'e' {
-			configData.Model = ""
+			configData.CellGeometryData.Model = ""
 		}
 
 		sdf = func(p [3]float64) float64 {
-			return resources.Sdf(p, faceData, configData.Model)
+			return resources.Sdf(p, faceData, configData.CellGeometryData.Model)
 		}
 
 	}
