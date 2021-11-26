@@ -260,7 +260,7 @@ func main() {
 
 	}
 
-	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 0.2, Width: 0.2}
+	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 1.0, Width: 1.0}
 	//light.Normal = vector.Cross3(light.Up, light.Left)
 
 	camera = resources.RotateXYZ([3]float64{configData.Distance, 0, 0}, configData.CameraRotateX, configData.CameraRotateY, configData.CameraRotateZ)

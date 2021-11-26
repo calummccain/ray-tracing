@@ -287,6 +287,7 @@ func SpectrumToRGBA2(spectrum []float64) color.RGBA {
 
 func SpectrumToRGBA(spectrum []float64, scale float64) color.RGBA {
 
+	spectrum = blur(spectrum, 5)
 	xyz := IntegrateSpectrum(spectrum, scale)
 
 	//fmt.Println(xyz)
@@ -321,5 +322,31 @@ func SpectrumToRGBA(spectrum []float64, scale float64) color.RGBA {
 		uint8(b),
 		255,
 	}
+
+}
+
+func blur(spectrum []float64, sigma float64) []float64 {
+
+	blurredSpectrum := make([]float64, len(spectrum))
+
+	for i := 0; i < len(spectrum); i++ {
+
+		if spectrum[i] > 0.0 {
+
+			for j := 0; j < len(spectrum); j++ {
+
+				if float64(i-j) < sigma && float64(i-j) > -sigma {
+
+					blurredSpectrum[j] += spectrum[i] * math.Exp(-float64(i-j)*float64(i-j)/(2*sigma*sigma)) / (sigma * math.Sqrt(2*math.Pi))
+
+				}
+
+			}
+
+		}
+
+	}
+
+	return blurredSpectrum
 
 }
