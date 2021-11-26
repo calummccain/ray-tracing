@@ -350,3 +350,30 @@ func blur(spectrum []float64, sigma float64) []float64 {
 	return blurredSpectrum
 
 }
+
+func MergeColourStimulus(spectralRaysNumber int) {
+
+	newX := make([]float64, spectralRaysNumber)
+	newY := make([]float64, spectralRaysNumber)
+	newZ := make([]float64, spectralRaysNumber)
+
+	for ii := 0; ii < spectralRaysNumber; ii++ {
+
+		for jj := 0; jj < 80/spectralRaysNumber; jj++ {
+
+			newX[ii] += XMatchFunction[ii*80/spectralRaysNumber+jj]
+			newY[ii] += YMatchFunction[ii*80/spectralRaysNumber+jj]
+			newZ[ii] += ZMatchFunction[ii*80/spectralRaysNumber+jj]
+
+		}
+
+		newX[ii] *= float64(spectralRaysNumber) / 80.0
+		newY[ii] *= float64(spectralRaysNumber) / 80.0
+		newZ[ii] *= float64(spectralRaysNumber) / 80.0
+
+	}
+
+	XMatchFunction = newX
+	YMatchFunction = newY
+	ZMatchFunction = newZ
+}

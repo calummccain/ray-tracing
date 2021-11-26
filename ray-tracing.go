@@ -143,7 +143,6 @@ func main() {
 	sdf := resources.SdfFunction(configData, faceData)
 
 	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 1.0, Width: 1.0}
-	//light.Normal = vector.Cross3(light.Up, light.Left)
 
 	camera = resources.RotateXYZ(
 		[3]float64{configData.CameraConfig.Distance, 0, 0},
@@ -197,49 +196,9 @@ func main() {
 
 	}
 
-	newX := make([]float64, configData.SpectralRays)
-	newY := make([]float64, configData.SpectralRays)
-	newZ := make([]float64, configData.SpectralRays)
-
-	for ii := 0; ii < configData.SpectralRays; ii++ {
-
-		for jj := 0; jj < 80/configData.SpectralRays; jj++ {
-
-			//fmt.Println(ii*80/configData.SpectralRays + jj)
-
-			newX[ii] += resources.XMatchFunction[ii*80/configData.SpectralRays+jj]
-			newY[ii] += resources.YMatchFunction[ii*80/configData.SpectralRays+jj]
-			newZ[ii] += resources.ZMatchFunction[ii*80/configData.SpectralRays+jj]
-
-		}
-
-		newX[ii] *= float64(configData.SpectralRays) / 80.0
-		newY[ii] *= float64(configData.SpectralRays) / 80.0
-		newZ[ii] *= float64(configData.SpectralRays) / 80.0
-
-	}
-
-	// fmt.Println(newX)
-	// fmt.Println(newY)
-	// fmt.Println(newZ)
-
-	resources.XMatchFunction = newX
-	resources.YMatchFunction = newY
-	resources.ZMatchFunction = newZ
+	resources.MergeColourStimulus(configData.RaytracingConfig.SpectralRaysNumber)
 
 	resources.Y_white = resources.IntegrateSpectrum(whiteLight, 1)[1]
-
-	// rr, gg, bb := resources.Constrainrgb(
-	// 	resources.IntegrateSpectrum(blackBody, resources.Y_white)[0],
-	// 	resources.IntegrateSpectrum(blackBody, resources.Y_white)[1],
-	// 	resources.IntegrateSpectrum(blackBody, resources.Y_white)[2],
-	// )
-
-	// fmt.Println(resources.Y_white)
-	// fmt.Println(blackBody)
-	// fmt.Println(resources.IntegrateSpectrum(blackBody, resources.Y_white))
-	// fmt.Println(rr, gg, bb)
-	// fmt.Println(resources.XYZToRGB(rr, gg, bb))
 
 	colBlackBody := resources.SpectrumToRGBA(blackBody, resources.Y_white*10000)
 
