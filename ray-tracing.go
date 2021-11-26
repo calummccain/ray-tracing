@@ -16,7 +16,6 @@ import (
 	"runtime/pprof"
 	"time"
 
-	"github.com/calummccain/coxeter/data"
 	"github.com/calummccain/coxeter/vector"
 )
 
@@ -124,61 +123,7 @@ func main() {
 	cells := configData.Cells
 
 	// Pick and generate the data from the supplier p,q,r and t/r/_
-	var cellData data.CellData
-	cell := [2]int{configData.P, configData.Q}
-	if configData.TruncRect == "r" {
-		switch cell {
-		case [2]int{3, 3}:
-			cellData = data.RectifiedTetrahedronData(configData.R)
-		case [2]int{3, 4}:
-			cellData = data.RectifiedOctahedronData(configData.R)
-		case [2]int{3, 5}:
-			cellData = data.RectifiedIcosahedronData(configData.R)
-		case [2]int{4, 3}:
-			cellData = data.RectifiedHexahedronData(configData.R)
-		case [2]int{5, 3}:
-			cellData = data.RectifiedDodecahedronData(configData.R)
-		default:
-			cellData = data.TetrahedronData(configData.R)
-		}
-	} else if configData.TruncRect == "t" {
-		switch cell {
-		case [2]int{3, 3}:
-			cellData = data.TruncatedTetrahedronData(configData.R)
-		case [2]int{3, 4}:
-			cellData = data.TruncatedOctahedronData(configData.R)
-		case [2]int{3, 5}:
-			cellData = data.TruncatedIcosahedronData(configData.R)
-		case [2]int{4, 3}:
-			cellData = data.TruncatedHexahedronData(configData.R)
-		case [2]int{5, 3}:
-			cellData = data.TruncatedDodecahedronData(configData.R)
-		default:
-			cellData = data.TetrahedronData(configData.R)
-		}
-	} else {
-		switch cell {
-		case [2]int{3, 3}:
-			cellData = data.TetrahedronData(configData.R)
-		case [2]int{3, 4}:
-			cellData = data.OctahedronData(configData.R)
-		case [2]int{3, 5}:
-			cellData = data.IcosahedronData(configData.R)
-		case [2]int{3, 6}:
-			cellData = data.TriangularData(configData.R, configData.NumberOfFaces)
-			cellData.C = [4]float64{1, -4, 0, 0}
-		case [2]int{4, 3}:
-			cellData = data.HexahedronData(configData.R)
-		case [2]int{4, 4}:
-			cellData = data.SquareData(configData.R, configData.NumberOfFaces)
-		case [2]int{5, 3}:
-			cellData = data.DodecahedronData(configData.R)
-		case [2]int{6, 3}:
-			cellData = data.HexagonalData(configData.R, configData.NumberOfFaces)
-		default:
-			cellData = data.HyperbolicData(configData.P, configData.Q, configData.R, configData.NumberOfFaces)
-		}
-	}
+	cellData := resources.SelectGeometry(configData.P, configData.Q, configData.R, configData.TruncRect, configData.NumberOfFaces)
 
 	faceData := [][]resources.Face{}
 

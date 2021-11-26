@@ -16,7 +16,6 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 	numberOfMarches := 0
 	depthStatistics := []int{0}
 
-	//var wShift, hShift float64
 	var shiftedDir [3]float64
 
 	var rays []ray
