@@ -49,7 +49,11 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 
 		shiftedDir = vector.Normalise3(vector.Sum3(vector.Sum3(dir, vector.Scale3(up, invHeight*rand.Float64())), vector.Scale3(left, invWidth*rand.Float64())))
 
-		randInt = rand.Intn(len(eta2))
+		if raysPerPixel > len(eta2) {
+			randInt = w % len(eta2)
+		} else {
+			randInt = rand.Intn(len(eta2))
+		}
 
 		hitsPerSpectra[randInt] += 1.0
 

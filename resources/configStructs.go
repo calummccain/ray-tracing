@@ -62,13 +62,14 @@ type MaterialConfig struct {
 }
 
 type LightConfig struct {
-	Temp   float64
-	Pos    [3]float64
-	Up     [3]float64
-	Left   [3]float64
-	Normal [3]float64
-	Height float64
-	Width  float64
+	Temp      float64
+	Intensity float64
+	Pos       [3]float64
+	Up        [3]float64
+	Left      [3]float64
+	Normal    [3]float64
+	Height    float64
+	Width     float64
 }
 
 type Config struct {

@@ -357,21 +357,40 @@ func MergeColourStimulus(spectralRaysNumber int) {
 	newY := make([]float64, spectralRaysNumber)
 	newZ := make([]float64, spectralRaysNumber)
 
-	for ii := 0; ii < spectralRaysNumber; ii++ {
+	i := 0
+	for i < 80 {
 
-		for jj := 0; jj < 80/spectralRaysNumber; jj++ {
+		newX[i*spectralRaysNumber/80] += XMatchFunction[i]
+		newY[i*spectralRaysNumber/80] += YMatchFunction[i]
+		newZ[i*spectralRaysNumber/80] += ZMatchFunction[i]
 
-			newX[ii] += XMatchFunction[ii*80/spectralRaysNumber+jj]
-			newY[ii] += YMatchFunction[ii*80/spectralRaysNumber+jj]
-			newZ[ii] += ZMatchFunction[ii*80/spectralRaysNumber+jj]
-
-		}
-
-		newX[ii] *= float64(spectralRaysNumber) / 80.0
-		newY[ii] *= float64(spectralRaysNumber) / 80.0
-		newZ[ii] *= float64(spectralRaysNumber) / 80.0
+		i++
 
 	}
+
+	for i := 0; i < spectralRaysNumber; i++ {
+
+		newX[i] *= float64(spectralRaysNumber) / 80.0
+		newY[i] *= float64(spectralRaysNumber) / 80.0
+		newZ[i] *= float64(spectralRaysNumber) / 80.0
+
+	}
+
+	// for ii := 0; ii < spectralRaysNumber; ii++ {
+
+	// 	for jj := 0; jj < 80/spectralRaysNumber; jj++ {
+
+	// 		newX[ii] += XMatchFunction[ii*80/spectralRaysNumber+jj]
+	// 		newY[ii] += YMatchFunction[ii*80/spectralRaysNumber+jj]
+	// 		newZ[ii] += ZMatchFunction[ii*80/spectralRaysNumber+jj]
+
+	// 	}
+
+	// 	newX[ii] *= float64(spectralRaysNumber) / 80.0
+	// 	newY[ii] *= float64(spectralRaysNumber) / 80.0
+	// 	newZ[ii] *= float64(spectralRaysNumber) / 80.0
+
+	// }
 
 	XMatchFunction = newX
 	YMatchFunction = newY

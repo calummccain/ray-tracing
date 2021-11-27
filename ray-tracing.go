@@ -193,7 +193,7 @@ func main() {
 
 		wavelengths = append(wavelengths, 380.0+400*(float64(i)+0.5)*invSpectralRaysNumber)
 		eta2 = append(eta2, 1.0+math.Pow(1.0+float64(i)*invSpectralRaysNumber, 1.2))
-		blackBody = append(blackBody, 10000*resources.BlackBodySpectrum(wavelengths[i], configData.LightsConfig[0].Temp))
+		blackBody = append(blackBody, 2000*(5/float64(configData.RaytracingConfig.SpectralRaysNumber))*resources.BlackBodySpectrum(wavelengths[i], configData.LightsConfig[0].Temp))
 		whiteLight = append(whiteLight, resources.BlackBodySpectrum(wavelengths[i], 6500))
 
 	}
@@ -202,7 +202,7 @@ func main() {
 
 	resources.Y_white = resources.IntegrateSpectrum(whiteLight, 1)[1]
 
-	colBlackBody := resources.SpectrumToRGBA(blackBody, resources.Y_white*10000)
+	colBlackBody := resources.SpectrumToRGBA(blackBody, resources.Y_white*2000*(5/float64(configData.RaytracingConfig.SpectralRaysNumber)))
 
 	spec := make([]float64, len(blackBody))
 	red := resources.SpectrumToRGBA(resources.XMatchFunction, 1.0)
