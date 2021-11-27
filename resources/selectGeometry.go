@@ -1,8 +1,6 @@
 package resources
 
 import (
-	"fmt"
-
 	"github.com/calummccain/coxeter/data"
 )
 
@@ -46,8 +44,6 @@ func SelectGeometry(CGC CellGeometryConfig) data.CellData {
 		}
 
 	} else {
-
-		fmt.Println([2]int{CGC.P, CGC.Q})
 
 		switch [2]int{CGC.P, CGC.Q} {
 		case [2]int{3, 3}:
