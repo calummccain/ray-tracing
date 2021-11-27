@@ -142,7 +142,7 @@ func main() {
 
 	sdf := resources.SdfFunction(configData, faceData)
 
-	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 1.0, Width: 1.0}
+	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 0.4, Width: 0.4}
 
 	camera = resources.RotateXYZ(
 		[3]float64{configData.CameraConfig.Distance, 0, 0},
@@ -187,11 +187,13 @@ func main() {
 	blackBody := []float64{}
 	whiteLight := []float64{}
 
-	for i := 0; i < configData.SpectralRays; i++ {
+	invSpectralRaysNumber := 1.0 / float64(configData.RaytracingConfig.SpectralRaysNumber)
 
-		wavelengths = append(wavelengths, 380.0+400*(float64(i)+0.5)/float64(configData.SpectralRays))
-		eta2 = append(eta2, 1.0+math.Pow(1.0+float64(i)/float64(configData.SpectralRays), 1.2))
-		blackBody = append(blackBody, 10000*resources.BlackBodySpectrum(wavelengths[i], configData.Temp))
+	for i := 0; i < configData.RaytracingConfig.SpectralRaysNumber; i++ {
+
+		wavelengths = append(wavelengths, 380.0+400*(float64(i)+0.5)*invSpectralRaysNumber)
+		eta2 = append(eta2, 1.0+math.Pow(1.0+float64(i)*invSpectralRaysNumber, 1.2))
+		blackBody = append(blackBody, 10000*resources.BlackBodySpectrum(wavelengths[i], configData.LightsConfig[0].Temp))
 		whiteLight = append(whiteLight, resources.BlackBodySpectrum(wavelengths[i], 6500))
 
 	}
@@ -202,22 +204,12 @@ func main() {
 
 	colBlackBody := resources.SpectrumToRGBA(blackBody, resources.Y_white*10000)
 
-	//fmt.Println(resources.Y_white)
-
 	spec := make([]float64, len(blackBody))
 	red := resources.SpectrumToRGBA(resources.XMatchFunction, 1.0)
-
 	green := resources.SpectrumToRGBA(resources.YMatchFunction, 1.0)
-	// fmt.Println(resources.IntegrateSpectrum(resources.YMatchFunction, 1.0))
-	// fmt.Println(resources.Constrainrgb(
-	// 	resources.IntegrateSpectrum(resources.YMatchFunction, 1.0)[0],
-	// 	resources.IntegrateSpectrum(resources.YMatchFunction, 1.0)[1],
-	// 	resources.IntegrateSpectrum(resources.YMatchFunction, 1.0)[2],
-	// ))
-	// fmt.Println(green)
 	blue := resources.SpectrumToRGBA(resources.ZMatchFunction, 1.0)
 
-	for k := 0; k < configData.SpectralRays; k++ {
+	for k := 0; k < configData.RaytracingConfig.SpectralRaysNumber; k++ {
 
 		spec[k] = 1
 
@@ -227,34 +219,28 @@ func main() {
 
 		col = resources.SpectrumToRGBA(spec, 1)
 
-		for i := (200 * k) / configData.SpectralRays; i < (200*(k+1))/configData.SpectralRays; i++ {
+		for i := (200 * k) / configData.RaytracingConfig.SpectralRaysNumber; i < (200*(k+1))/configData.RaytracingConfig.SpectralRaysNumber; i++ {
+
 			for j := 0; j < 100; j++ {
 				spectrumImage.Set(i, j, col)
 			}
-		}
 
-		for i := (200 * k) / configData.SpectralRays; i < (200*(k+1))/configData.SpectralRays; i++ {
 			for j := 0; j < int(50*resources.XMatchFunction[k]); j++ {
 				spectrumImage.Set(i, 100+j, red)
 			}
-		}
 
-		for i := (200 * k) / configData.SpectralRays; i < (200*(k+1))/configData.SpectralRays; i++ {
 			for j := 0; j < int(50*resources.YMatchFunction[k]); j++ {
 				spectrumImage.Set(i, 200+j, green)
 			}
-		}
 
-		for i := (200 * k) / configData.SpectralRays; i < (200*(k+1))/configData.SpectralRays; i++ {
 			for j := 0; j < int(50*resources.ZMatchFunction[k]); j++ {
 				spectrumImage.Set(i, 300+j, blue)
 			}
-		}
 
-		for i := (200 * k) / configData.SpectralRays; i < (200*(k+1))/configData.SpectralRays; i++ {
 			for j := 0; j < int(50*blackBody[k]/1e14); j++ {
 				spectrumImage.Set(i, 400+j, colBlackBody)
 			}
+
 		}
 
 	}
@@ -262,11 +248,11 @@ func main() {
 	f, _ := os.Create("images/spectrum.png")
 	png.Encode(f, spectrumImage)
 
-	for i := 0; i < width; i++ {
+	for i := 0; i < configData.ImageConfig.Width; i++ {
 
 		iFloat = float64(i)*invWidth - 0.5*(1-invWidth)
 
-		for j := 0; j < height; j++ {
+		for j := 0; j < configData.ImageConfig.Height; j++ {
 
 			fmt.Print("\033[K\r")
 			fmt.Print(i, " - ", j)
@@ -275,21 +261,21 @@ func main() {
 
 			dir = vector.Sum3(vector.Sum3(oc, vector.Scale3(up, jFloat)), vector.Scale3(left, iFloat))
 
-			if !configData.Spectral {
+			if !configData.RaytracingConfig.Spectral {
 
 				colourRGB, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, _ = resources.RayTrace(
 					sdf,
 					dir,
 					camera,
-					configData.Eta1,
-					[3]float64{configData.Eta2R, configData.Eta2G, configData.Eta2B},
-					configData.NumberOfBounces,
+					configData.MaterialConfig.Eta1,
+					[3]float64{configData.MaterialConfig.Eta2R, configData.MaterialConfig.Eta2G, configData.MaterialConfig.Eta2B},
+					configData.RaytracingConfig.NumberOfBounces,
 					faceData,
 					up,
 					left,
 					invHeight,
 					invWidth,
-					configData.RaysPerPixel,
+					configData.RaytracingConfig.RaysPerPixel,
 				)
 
 				r = colourRGB[0]
@@ -314,16 +300,16 @@ func main() {
 					sdf,
 					dir,
 					camera,
-					configData.Eta1,
+					configData.MaterialConfig.Eta1,
 					eta2,
 					blackBody,
-					configData.NumberOfBounces,
+					configData.RaytracingConfig.NumberOfBounces,
 					faceData,
 					up,
 					left,
 					invHeight,
 					invWidth,
-					configData.RaysPerPixel,
+					configData.RaytracingConfig.RaysPerPixel,
 					light,
 				)
 
@@ -354,14 +340,10 @@ func main() {
 	f, _ = os.Create("images/test.png")
 	png.Encode(f, rayTracedImage)
 
-	if configData.Save {
+	if configData.ImageConfig.Save {
 
 		f, _ := os.Create(fmt.Sprintf("images/png/%d.png", timeString))
 		png.Encode(f, rayTracedImage)
-
-	}
-
-	if configData.Save {
 
 		origJson, err := os.Open("config.json")
 		if err != nil {
