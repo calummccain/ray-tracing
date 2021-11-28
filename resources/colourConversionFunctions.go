@@ -47,24 +47,6 @@ var (
 
 var Y_white = 0.0
 
-// func upvptoxy(up, vp float64) (xc, yc float64) {
-
-// 	xc = (9.0 * up) / ((6.0 * up) - (16.0 * vp) + 12.0)
-// 	yc = (4.0 * vp) / ((6.0 * up) - (16.0 * vp) + 12.0)
-
-// 	return xc, yc
-
-// }
-
-// func xytoupvp(up, vp float64) (xc, yc float64) {
-
-// 	up = (4.0 * xc) / ((-2.0 * xc) + (12.0 * yc) + 3.0)
-// 	vp = (9.0 * yc) / ((-2.0 * xc) + (12.0 * yc) + 3.0)
-
-// 	return up, vp
-
-// }
-
 func Xyztorgb(cs colourSystem, xc, yc, zc float64, scale bool) (r, g, b float64) {
 
 	if scale {
@@ -123,11 +105,6 @@ func Xyztorgb(cs colourSystem, xc, yc, zc float64, scale bool) (r, g, b float64)
 	return r, g, b
 }
 
-// func insideGamut(r, b, g float64) bool {
-
-// 	return (r >= 0) && (g >= 0) && (b >= 0)
-// }
-
 func Constrainrgb(r, g, b float64) (float64, float64, float64) {
 
 	w := math.Min(r, math.Min(g, b))
@@ -153,21 +130,6 @@ func Constrainrgb(r, g, b float64) (float64, float64, float64) {
 		w = math.Max(r, math.Max(g, b))
 
 	}
-
-	// if w < 0.0 {
-
-	// 	r, g, b = r-w, g-w, b-w
-
-	// }
-
-	// w = math.Min(r, math.Min(g, b))
-	// ww := math.Max(r, math.Max(g, b))
-
-	// if w > 1.0 {
-
-	// 	}
-
-	//return Clamp(r, 0.0, 1.0), Clamp(g, 0.0, 1.0), Clamp(b, 0.0, 1.0)
 
 	return r, g, b
 
@@ -224,65 +186,12 @@ func IntegrateSpectrum(spectrum []float64, scale float64) [3]float64 {
 
 func XYZToRGB(x, y, z float64) (float64, float64, float64) {
 
-	// r := math.Max(2.3706743*x-0.9000405*y-0.4706338*z, 0)
-	// g := math.Max(-0.5138850*x+1.4253036*y+0.0885814*z, 0)
-	// b := math.Max(0.0052982*x-0.0146949*y+1.0093968*z, 0)
-
 	r := math.Min(math.Max(3.2406*x-1.5372*y-0.4986*z, 0), 1)
 	g := math.Min(math.Max(-0.9689*x+1.8758*y+0.0415*z, 0), 1)
 	b := math.Min(math.Max(0.0557*x-0.2040*y+1.0570*z, 0), 1)
 
-	// r := 3.2406*x - 1.5372*y - 0.4986*z
-	// g := -0.9689*x + 1.8758*y + 0.0415*z
-	// b := 0.0557*x - 0.2040*y + 1.0570*z
-
 	return r, g, b
 
-}
-
-func SpectrumToRGBA2(spectrum []float64) color.RGBA {
-
-	xyz := IntegrateSpectrum(spectrum, 1)
-
-	// x := xyz[0]
-	// y := xyz[1]
-	// z := xyz[2]
-
-	// x, y, z = x/y, 1, z/y
-
-	// xyz = [3]float64{x, y, z}
-
-	// var_R := xyz[0]*3.2406 + xyz[1]*-1.5372 + xyz[2]*-0.4986
-	// var_G := xyz[0]*-0.9689 + xyz[1]*1.8758 + xyz[2]*0.0415
-	// var_B := xyz[0]*0.057 + xyz[1]*-0.2040 + xyz[2]*1.0570
-	var_R := xyz[0]*1.656 + xyz[1]*-0.355 + xyz[2]*-0.255
-	var_G := xyz[0]*-0.707 + xyz[1]*1.655 + xyz[2]*0.036
-	var_B := xyz[0]*0.052 + xyz[1]*-0.121 + xyz[2]*1.012
-
-	if var_R > 0.0031308 {
-		var_R = 1.055*math.Pow(var_R, 0.45) - 0.055
-	} else {
-		var_R = 12.92 * var_R
-	}
-
-	if var_G > 0.0031308 {
-		var_G = 1.055*math.Pow(var_G, 0.45) - 0.055
-	} else {
-		var_G = 12.92 * var_G
-	}
-
-	if var_B > 0.0031308 {
-		var_B = 1.055*math.Pow(var_B, 0.45) - 0.055
-	} else {
-		var_B = 12.92 * var_B
-	}
-
-	return color.RGBA{
-		uint8(255 * var_R),
-		uint8(255 * var_G),
-		uint8(255 * var_B),
-		255,
-	}
 }
 
 func SpectrumToRGBA(spectrum []float64, scale float64, sigma float64) color.RGBA {
@@ -290,27 +199,13 @@ func SpectrumToRGBA(spectrum []float64, scale float64, sigma float64) color.RGBA
 	spectrum = blur(spectrum, sigma)
 	xyz := IntegrateSpectrum(spectrum, scale)
 
-	//fmt.Println(xyz)
-
 	r, g, b := Constrainrgb(xyz[0], xyz[1], xyz[2])
 
-	//fmt.Println(r, g, b)
-
 	r, g, b = XYZToRGB(r, g, b)
-	//r, g, b := XYZToRGB(xyz[0], xyz[1], xyz[2])
 
 	r = GammaCorrect(r)
 	g = GammaCorrect(g)
 	b = GammaCorrect(b)
-
-	//colour := Gammacorrect(Normrgb([3]float64{r, g, b}))
-	//colour := Gammacorrect([3]float64{r, g, b}, CIEsystem)
-	//colour := [3]float64{r, g, b}
-	// r = colour[0]
-	// g = colour[1]
-	// b = colour[2]
-
-	//sum := 0.2126*r + 0.7152*g + 0.0722*b
 
 	r *= 255.0
 	g *= 255.0
@@ -375,22 +270,6 @@ func MergeColourStimulus(spectralRaysNumber int) {
 		newZ[i] *= float64(spectralRaysNumber) / 80.0
 
 	}
-
-	// for ii := 0; ii < spectralRaysNumber; ii++ {
-
-	// 	for jj := 0; jj < 80/spectralRaysNumber; jj++ {
-
-	// 		newX[ii] += XMatchFunction[ii*80/spectralRaysNumber+jj]
-	// 		newY[ii] += YMatchFunction[ii*80/spectralRaysNumber+jj]
-	// 		newZ[ii] += ZMatchFunction[ii*80/spectralRaysNumber+jj]
-
-	// 	}
-
-	// 	newX[ii] *= float64(spectralRaysNumber) / 80.0
-	// 	newY[ii] *= float64(spectralRaysNumber) / 80.0
-	// 	newZ[ii] *= float64(spectralRaysNumber) / 80.0
-
-	// }
 
 	XMatchFunction = newX
 	YMatchFunction = newY

@@ -1,7 +1,5 @@
 package resources
 
-import "fmt"
-
 type VertexEuclidean struct {
 	V4 [4]float64
 	V3 [3]float64
@@ -54,6 +52,7 @@ type Light struct {
 	Normal    [3]float64
 	Height    float64
 	Width     float64
+	Inside    bool
 }
 
 func (l *Light) SpectrumFromWavelength(wavelengths []float64, SpectralRaysNumber int) {
@@ -64,6 +63,14 @@ func (l *Light) SpectrumFromWavelength(wavelengths []float64, SpectralRaysNumber
 
 	}
 
-	fmt.Println(l.Spectrum)
+}
+
+func (l *Light) LightInside(sdf func([3]float64) float64) {
+
+	if sdf(l.Pos) < 0.0 {
+		l.Inside = true
+	} else {
+		l.Inside = false
+	}
 
 }

@@ -76,7 +76,7 @@ func RayTraceSpectral(sdf func([3]float64) float64, dir, pos [3]float64, eta1 fl
 					if rays[i].layer >= 0 {
 
 						norm = CalcNormal(sdf, rays[i].pos)
-						spectrum[randInt] += rays[i].weight * spectralColourLinear(sdf, rays[i].pos, norm, lights, rays[i].length, randInt)
+						spectrum[randInt] += rays[i].weight * spectralColourLinear(sdf, rays[i].pos, rays[i].dir, lights, rays[i].length, randInt)
 
 					}
 
@@ -194,7 +194,7 @@ func spectralColourLinear(sdf func([3]float64) float64, point, norm [3]float64, 
 
 				_, hit, tt := RayMarch(sdf, point, light.Normal)
 
-				if !hit {
+				if (hit && light.Inside) || (!hit && !light.Inside) {
 
 					output += light.Spectrum[i] * math.Abs(vector.Dot3(light.Normal, norm)) / ((t + tt) * (t + tt))
 

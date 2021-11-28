@@ -140,6 +140,10 @@ func main() {
 
 	}
 
+	if cellData.Metric == 's' || cellData.Metric == 'e' {
+		configData.CellGeometryConfig.Model = ""
+	}
+
 	sdf := resources.SdfFunction(configData, faceData)
 
 	camera = resources.RotateXYZ(
@@ -212,6 +216,7 @@ func main() {
 
 	for i := 0; i < len(lights); i++ {
 		lights[i].SpectrumFromWavelength(wavelengths, configData.RaytracingConfig.SpectralRaysNumber)
+		lights[i].LightInside(sdf)
 	}
 
 	resources.MergeColourStimulus(configData.RaytracingConfig.SpectralRaysNumber)
