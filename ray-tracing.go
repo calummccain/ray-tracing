@@ -142,8 +142,6 @@ func main() {
 
 	sdf := resources.SdfFunction(configData, faceData)
 
-	light := resources.Light{Pos: [3]float64{0, -10, 0}, Up: [3]float64{1, 0, 0}, Left: [3]float64{0, 0, 1}, Normal: [3]float64{0, -1, 0}, Height: 0.4, Width: 0.4}
-
 	camera = resources.RotateXYZ(
 		[3]float64{configData.CameraConfig.Distance, 0, 0},
 		configData.CameraConfig.CameraRotateX,
@@ -198,16 +196,34 @@ func main() {
 
 	}
 
+	lights := []resources.Light{}
+	for _, lightConfig := range configData.LightsConfig {
+		lights = append(lights, resources.Light{
+			Temp:      lightConfig.Temp,
+			Intensity: lightConfig.Intensity,
+			Pos:       lightConfig.Pos,
+			Up:        lightConfig.Up,
+			Left:      lightConfig.Left,
+			Normal:    lightConfig.Normal,
+			Height:    lightConfig.Height,
+			Width:     lightConfig.Width,
+		})
+	}
+
+	for i := 0; i < len(lights); i++ {
+		lights[i].SpectrumFromWavelength(wavelengths, configData.RaytracingConfig.SpectralRaysNumber)
+	}
+
 	resources.MergeColourStimulus(configData.RaytracingConfig.SpectralRaysNumber)
 
 	resources.Y_white = resources.IntegrateSpectrum(whiteLight, 1)[1]
 
-	colBlackBody := resources.SpectrumToRGBA(blackBody, resources.Y_white*2000*(5/float64(configData.RaytracingConfig.SpectralRaysNumber)))
+	colBlackBody := resources.SpectrumToRGBA(blackBody, resources.Y_white*2000*(5/float64(configData.RaytracingConfig.SpectralRaysNumber)), configData.RaytracingConfig.Sigma)
 
 	spec := make([]float64, len(blackBody))
-	red := resources.SpectrumToRGBA(resources.XMatchFunction, 1.0)
-	green := resources.SpectrumToRGBA(resources.YMatchFunction, 1.0)
-	blue := resources.SpectrumToRGBA(resources.ZMatchFunction, 1.0)
+	red := resources.SpectrumToRGBA(resources.XMatchFunction, 1.0, configData.RaytracingConfig.Sigma)
+	green := resources.SpectrumToRGBA(resources.YMatchFunction, 1.0, configData.RaytracingConfig.Sigma)
+	blue := resources.SpectrumToRGBA(resources.ZMatchFunction, 1.0, configData.RaytracingConfig.Sigma)
 
 	for k := 0; k < configData.RaytracingConfig.SpectralRaysNumber; k++ {
 
@@ -217,7 +233,7 @@ func main() {
 			spec[k-1] = 0
 		}
 
-		col = resources.SpectrumToRGBA(spec, 1)
+		col = resources.SpectrumToRGBA(spec, 1, configData.RaytracingConfig.Sigma)
 
 		for i := (200 * k) / configData.RaytracingConfig.SpectralRaysNumber; i < (200*(k+1))/configData.RaytracingConfig.SpectralRaysNumber; i++ {
 
@@ -310,7 +326,8 @@ func main() {
 					invHeight,
 					invWidth,
 					configData.RaytracingConfig.RaysPerPixel,
-					light,
+					lights,
+					configData.RaytracingConfig.Sigma,
 				)
 
 			}

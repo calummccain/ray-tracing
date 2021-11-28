@@ -52,6 +52,7 @@ type RaytracingConfig struct {
 	RaysPerPixel       int
 	SpectralRaysNumber int
 	Spectral           bool
+	Sigma              float64
 }
 
 type MaterialConfig struct {

@@ -285,9 +285,9 @@ func SpectrumToRGBA2(spectrum []float64) color.RGBA {
 	}
 }
 
-func SpectrumToRGBA(spectrum []float64, scale float64) color.RGBA {
+func SpectrumToRGBA(spectrum []float64, scale float64, sigma float64) color.RGBA {
 
-	spectrum = blur(spectrum, 5)
+	spectrum = blur(spectrum, sigma)
 	xyz := IntegrateSpectrum(spectrum, scale)
 
 	//fmt.Println(xyz)
