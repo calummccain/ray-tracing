@@ -14,12 +14,17 @@ import (
 	"os"
 	"ray-tracing/resources"
 	"runtime/pprof"
+	"sync"
 	"time"
 
 	"github.com/calummccain/coxeter/vector"
 )
 
+var wg sync.WaitGroup
+
 func main() {
+
+	start := time.Now()
 
 	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 
@@ -52,7 +57,7 @@ func main() {
 	rayTracedImage := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{configData.ImageConfig.Width, configData.ImageConfig.Height}})
 
 	var col color.Color
-	var r, g, b, a float64
+	//var r, g, b, a float64
 
 	var camera [3]float64
 	var origin [3]float64
@@ -60,10 +65,13 @@ func main() {
 	var oc [3]float64
 	var left [3]float64
 
-	var dir [3]float64
-	var colour color.RGBA
+	//var dir [3]float64
+	//var colour []color.RGBA
 
-	var colourRGB [3]float64
+	//colourArray := make([]resources.ColumnColours, configData.ImageConfig.Width)
+	// colourArray := make(chan resources.ColumnColours, configData.ImageConfig.Width)
+
+	//var colourRGB [3]float64
 
 	// Local coordinates for view frame
 	//               1
@@ -75,7 +83,8 @@ func main() {
 	//               |
 	//               |
 	//               -1
-	var iFloat, jFloat float64
+	//var iFloat float64
+	//jFloat float64
 
 	// Cells is a list of the names of the cells to calculate for
 	cells := configData.CellGeometryConfig.Cells
@@ -173,9 +182,9 @@ func main() {
 	hitPixels := 0
 	//depthStatistics := []int{}
 
-	var numberOfRaysLocal int
-	var numberOfMarchesLocal int
-	var numberOfHitsLocal int
+	// var numberOfRaysLocal int
+	// var numberOfMarchesLocal int
+	// var numberOfHitsLocal int
 	//var depthStatisticsLocal []int
 
 	//depthStatistics := make([]int, configData.NumberOfBounces+1)
@@ -269,86 +278,59 @@ func main() {
 	f, _ := os.Create("images/spectrum.png")
 	png.Encode(f, spectrumImage)
 
-	for i := 0; i < configData.ImageConfig.Width; i++ {
+	jobs := make(chan int)
 
-		iFloat = float64(i)*invWidth - 0.5*(1-invWidth)
+	colourArray := make(chan resources.ColumnColours, configData.ImageConfig.Width)
 
-		for j := 0; j < configData.ImageConfig.Height; j++ {
+	for w := 0; w < 10; w++ {
 
-			fmt.Print("\033[K\r")
-			fmt.Print(i, " - ", j)
-
-			jFloat = float64(j)*invHeight - 0.5*(1-invHeight)
-
-			dir = vector.Sum3(vector.Sum3(oc, vector.Scale3(up, jFloat)), vector.Scale3(left, iFloat))
-
-			if !configData.RaytracingConfig.Spectral {
-
-				colourRGB, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, _ = resources.RayTrace(
-					sdf,
-					dir,
-					camera,
-					configData.MaterialConfig.Eta1,
-					[3]float64{configData.MaterialConfig.Eta2R, configData.MaterialConfig.Eta2G, configData.MaterialConfig.Eta2B},
-					configData.RaytracingConfig.NumberOfBounces,
-					faceData,
-					up,
-					left,
-					invHeight,
-					invWidth,
-					configData.RaytracingConfig.RaysPerPixel,
-				)
-
-				r = colourRGB[0]
-				g = colourRGB[1]
-				b = colourRGB[2]
-				a = 255
-
-				r = 255 * r
-				g = 255 * g
-				b = 255 * b
-
-				colour = color.RGBA{
-					uint8(r),
-					uint8(g),
-					uint8(b),
-					uint8(a),
-				}
-
-			} else {
-
-				colour, numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal, _ = resources.RayTraceSpectral(
-					sdf,
-					dir,
-					camera,
-					configData.MaterialConfig.Eta1,
-					eta2,
-					blackBody,
-					configData.RaytracingConfig.NumberOfBounces,
-					faceData,
-					up,
-					left,
-					invHeight,
-					invWidth,
-					configData.RaytracingConfig.RaysPerPixel,
-					lights,
-					configData.RaytracingConfig.Sigma,
-				)
-
-			}
-
-			rayTracedImage.Set(i, j, colour)
-
-			numberOfRays += numberOfRaysLocal
-			numberOfMarches += numberOfMarchesLocal
-			hitPixels += numberOfHitsLocal
-			//depthStatistics = resources.SumInt(depthStatistics, depthStatisticsLocal)
-
-		}
+		wg.Add(1)
+		go resources.GenerateColumn(
+			configData,
+			invWidth,
+			invHeight,
+			jobs,
+			oc,
+			up,
+			left,
+			camera,
+			sdf,
+			faceData,
+			eta2,
+			blackBody,
+			lights,
+			colourArray,
+			&wg,
+		)
 
 	}
 
-	fmt.Print("\033[K\r")
+	for i := 0; i < configData.ImageConfig.Width; i++ {
+
+		jobs <- i
+
+		//colourArray[i] = resources.ColumnColours{ColumnNumber: i, Colours: colour}
+
+	}
+
+	close(jobs)
+
+	wg.Wait()
+
+	close(colourArray)
+
+	for column := range colourArray {
+		for j, colour := range column.Colours {
+			rayTracedImage.Set(column.ColumnNumber, j, colour)
+		}
+	}
+
+	// for _, subArray := range colourArray {
+	// 	close(subArray)
+	// }
+	//close(colourArray)
+
+	//fmt.Print("\033[K\r")
 
 	averageDepth = float64(numberOfMarches-numberOfRays+hitPixels) / float64(hitPixels)
 
@@ -387,5 +369,7 @@ func main() {
 		origJson.Close()
 
 	}
+
+	log.Printf("%s", time.Since(start))
 
 }

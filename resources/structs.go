@@ -1,5 +1,7 @@
 package resources
 
+import "image/color"
+
 type VertexEuclidean struct {
 	V4 [4]float64
 	V3 [3]float64
@@ -53,6 +55,11 @@ type Light struct {
 	Height    float64
 	Width     float64
 	Inside    bool
+}
+
+type ColumnColours struct {
+	ColumnNumber int
+	Colours      []color.RGBA
 }
 
 func (l *Light) SpectrumFromWavelength(wavelengths []float64, SpectralRaysNumber int) {
