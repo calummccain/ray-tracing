@@ -6,72 +6,121 @@ import (
 	"github.com/calummccain/coxeter/vector"
 )
 
-func Sdf(faces [][]FaceHyperbolic, p [3]float64) float64 {
+//
+// Union: min(sdf_a, sdf_b)
+// Intersection: max(sdf_a, sdf_b)
+// Subtraction: max(sdf_a, -sdf_b)
+//
 
-	//norm := Smin(vector.Norm3(vector.Diff3(p, [3]float64{0, 0, 0.75}))-1.0, vector.Norm3(vector.Diff3(p, [3]float64{0, 0, -0.75}))-1.0)
+// Signed distance function of a torus with radii ra and rb
+func SdfTorus(p [3]float64, torusConfig TorusConfig) float64 {
 
-	// ra := 1.0
-	// rb := 0.2
-	// norm := vector.Norm2([2]float64{vector.Norm2([2]float64{p[1], p[2]}) - ra, p[0]}) - rb
-	// return norm
-	return math.Min(math.Min(vector.Norm3(vector.Diff3(p, [3]float64{2, 0, 0}))-0.5, vector.Norm3(vector.Diff3(p, [3]float64{-1.5, 0, 0}))-2), vector.Norm3(vector.Diff3(p, [3]float64{-9, 0, 0}))-4)
+	return vector.Norm2([2]float64{vector.Norm2([2]float64{p[1], p[2]}) - torusConfig.TorusA, p[0]}) - torusConfig.TorusB
 
-	// var val, val2 float64
+}
 
-	// norm := vector.Norm3(p) - 1.0
+// Signed distance function of a spherical/euclidean/hyperbolic cell
+func Sdf(p [3]float64, faces [][]Face, flag string) (val float64) {
 
-	// for i := 0; i < len(faces); i++ {
+	var val2 float64
 
-	// 	val2 = norm
+	for i := 0; i < len(faces); i++ {
 
-	// 	for j := 0; j < len(faces[i]); j++ {
+		if faces[i][0].Outside {
 
-	// 		if faces[i][j].InOut {
+			if faces[i][0].Type == "sphere" {
 
-	// 			val2 = Smax(val2, faces[i][j].Radius-vector.Distance(p[:], faces[i][j].SphereCenter[:]))
+				val2 = faces[i][0].Radius - vector.Distance3(p, faces[i][0].SphereCenter)
 
-	// 		} else {
+			} else {
 
-	// 			val2 = Smax(val2, vector.Distance(p[:], faces[i][j].SphereCenter[:])-faces[i][j].Radius)
+				val2 = faces[i][0].D - vector.Dot3(p, faces[i][0].Normal)
 
-	// 		}
+			}
 
-	// 	}
+		} else {
 
-	// 	if i == 0 {
+			if faces[i][0].Type == "sphere" {
 
-	// 		val = val2
+				val2 = vector.Distance3(p, faces[i][0].SphereCenter) - faces[i][0].Radius
 
-	// 	} else {
+			} else {
 
-	// 		val = math.Min(val, val2)
+				val2 = -faces[i][0].D + vector.Dot3(p, faces[i][0].Normal)
 
-	// 	}
+			}
 
-	// }
+		}
 
-	// return val
+		for j := 1; j < len(faces[i]); j++ {
 
-	//return (Smax(math.Abs(p[0]+p[1])-p[2], math.Abs(p[0]-p[1])+p[2]) - 1.0) / math.Sqrt(3.0)
+			if faces[i][j].Outside {
 
-	// p = [3]float64{math.Abs(p[0]), math.Abs(p[1]), math.Abs(p[2])}
-	// m := p[0] + p[1] + p[2] - 2.0
-	// var q [3]float64
-	// if 3.0*p[0] < m {
-	// 	q = p
-	// } else if 3.0*p[1] < m {
-	// 	q = [3]float64{p[2], p[0], p[1]}
-	// } else if 3.0*p[2] < m {
-	// 	q = [3]float64{p[1], p[2], p[0]}
-	// } else {
-	// 	return m * 0.57735027
-	// }
+				if faces[i][j].Type == "sphere" {
 
-	// k := Clamp(0.5*(q[2]-q[1]+1), 0.0, 2.0)
-	// return vector.Norm3([3]float64{q[0], q[1] - 2 + k, q[2] - k})
+					val2 = math.Max(val2, faces[i][j].Radius-vector.Distance3(p, faces[i][j].SphereCenter))
 
-	//return Smax(math.Abs(p[0]), Smax(math.Abs(p[1])-1, math.Abs(p[2]))) - 1
+				} else {
 
-	//return vector.Norm3(p) - 1
+					val2 = math.Max(val2, faces[i][j].D-vector.Dot3(p, faces[i][j].Normal))
+
+				}
+
+			} else {
+
+				if faces[i][j].Type == "sphere" {
+
+					val2 = math.Max(val2, vector.Distance3(p, faces[i][j].SphereCenter)-faces[i][j].Radius)
+
+				} else {
+
+					val2 = math.Max(val2, -faces[i][j].D+vector.Dot3(p, faces[i][j].Normal))
+
+				}
+
+			}
+
+		}
+
+		if i == 0 {
+
+			val = val2
+
+		} else {
+
+			val = math.Min(val, val2)
+
+		}
+
+	}
+
+	if flag == "poincare" {
+
+		val = math.Max(vector.Norm3(p)-1.0, val)
+
+	}
+
+	return val
+
+}
+
+// Signed distance function of a cuboid of lengths 2a, 2b, 2c
+func SdfCube(p [3]float64, cubeConfig CubeConfig) float64 {
+
+	return Smax(math.Abs(p[0])-cubeConfig.CubeA, Smax(math.Abs(p[1])-cubeConfig.CubeB, math.Abs(p[2])-cubeConfig.CubeC))
+
+}
+
+// Signed distance function of a sphere of radius r
+func SdfSphere(p [3]float64, sphereConfig SphereConfig) float64 {
+
+	return vector.Norm3(p) - sphereConfig.SphereRadius
+
+}
+
+// signed distance function of a row of spheres
+func SdfSpheres(p [3]float64) float64 {
+
+	return math.Min(math.Min(vector.Norm3(vector.Diff3(p, [3]float64{2, 0, 0}))-1.0, vector.Norm3(vector.Diff3(p, [3]float64{-2, 0, 0}))-2.0), vector.Norm3(vector.Diff3(p, [3]float64{-9, 0, 0}))-4.0)
 
 }

@@ -3,8 +3,30 @@ package resources
 import (
 	"github.com/calummccain/coxeter/hyperbolic"
 	"github.com/calummccain/coxeter/shared"
+	"github.com/calummccain/coxeter/spherical"
 	"github.com/calummccain/coxeter/vector"
 )
+
+func GenerateVerticesSpherical(vertices [][4]float64, cell string, matrices shared.Matrices, numVertices int) []VertexSpherical {
+
+	newVertices := vector.TransformVertices(vertices, cell, matrices)
+	var verts []VertexSpherical
+	var p [4]float64
+
+	for i := 0; i < numVertices; i++ {
+
+		p = matrices.F(newVertices[i])
+
+		verts = append(verts, VertexSpherical{
+			V4: p,
+			V3: spherical.HyperToStereo(p),
+		})
+
+	}
+
+	return verts
+
+}
 
 func GenerateVerticesEuclidean(vertices [][4]float64, cell string, matrices shared.Matrices, numVertices int) []VertexEuclidean {
 
