@@ -282,7 +282,7 @@ func main() {
 
 	colourArray := make(chan resources.ColumnColours, configData.ImageConfig.Width)
 
-	for w := 0; w < 10; w++ {
+	for w := 0; w < 4; w++ {
 
 		wg.Add(1)
 		go resources.GenerateColumn(
