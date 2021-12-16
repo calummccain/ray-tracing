@@ -34,8 +34,8 @@ type PointVisibility struct {
 }
 
 type ray struct {
-	pos     [3]float64
-	dir     [3]float64
+	pos     vector3
+	dir     vector3
 	weight  float64
 	rayType string
 	parent  int

@@ -2,11 +2,9 @@ package resources
 
 import (
 	"math"
-
-	"github.com/calummccain/coxeter/vector"
 )
 
-func RayMarch(sdf func([3]float64) float64, position, direction [3]float64) ([3]float64, bool, float64) {
+func RayMarch(sdf func([3]float64) float64, position *vector3, direction vector3) (bool, float64) {
 
 	var tempT float64
 
@@ -16,7 +14,7 @@ func RayMarch(sdf func([3]float64) float64, position, direction [3]float64) ([3]
 
 	for i := 0; i < NumberOfIterations; i++ {
 
-		tempT = math.Abs(sdf(position))
+		tempT = math.Abs(sdf([3]float64{position.x, position.y, position.z}))
 
 		if tempT < RayMarchEps {
 
@@ -26,10 +24,10 @@ func RayMarch(sdf func([3]float64) float64, position, direction [3]float64) ([3]
 
 		}
 
-		position = vector.Sum3(position, vector.Scale3(direction, tempT))
+		position.Sum(direction.Scale(tempT))
 		t += tempT
 
-		if vector.NormSquared3(position) > MaxRayMarchDepth {
+		if position.Norm() > MaxRayMarchDepth {
 
 			break
 
@@ -37,5 +35,5 @@ func RayMarch(sdf func([3]float64) float64, position, direction [3]float64) ([3]
 
 	}
 
-	return position, hit, t
+	return hit, t
 }
