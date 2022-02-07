@@ -17,7 +17,7 @@ func GenerateColumn(configData Config, invWidth, invHeight float64, jobs <-chan 
 		var jFloat float64
 		iFloat := float64(job)*invWidth - 0.5*(1-invWidth)
 
-		var dir [3]float64
+		var dir vector3
 		var colourRGB [3]float64
 		//var numberOfRaysLocal, numberOfMarchesLocal, numberOfHitsLocal int
 		var r, g, b, a float64
